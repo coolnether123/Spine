@@ -11,6 +11,13 @@ Install Harmony, then install this folder as an ordinary RimWorld mod and place
 Spine before mods that declare `CoolNether123.Spine` as a dependency. Do not
 copy `Spine.dll` into consumer mods.
 
+Spine does not yet have a public Workshop or download URL. The verified local
+RimWorld 1.6 distribution therefore ships Spine and its four gameplay
+consumers together at
+`A:\Dev\RimWorld\Releases\1.6\2026-07-30-program-final`. Copy the `Spine`
+folder alongside any gameplay-mod folder you choose to install. Each gameplay
+mod remains independently selectable and depends on no other gameplay mod.
+
 ## Consumer rules
 
 - Pass the consumer's own `Harmony` instance to Spine patch helpers so Harmony
