@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "packageId": "coolnether123.spine",
+  "rimWorldVersion": "1.6",
+  "profilerMode": "absent",
+  "requiredProvenance": [
+    "versionManifestSha256",
+    "gameAssemblySha256",
+    "sourceCommit",
+    "modAssemblySha256",
+    "activeMods",
+    "logSha256"
+  ]
+}

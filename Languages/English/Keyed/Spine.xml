@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Spine_Settings_UI_PreviewingOption>Previewing option</Spine_Settings_UI_PreviewingOption>
+  <Spine_Settings_UI_CurrentSelection>Current selection</Spine_Settings_UI_CurrentSelection>
+  <Spine_Settings_UI_SelectsOption>Selecting {0} sets {1} to {0}.</Spine_Settings_UI_SelectsOption>
+  <Spine_Settings_UI_AddOption>Add option</Spine_Settings_UI_AddOption>
+  <Spine_Settings_UI_NoOptionsAvailable>No options available</Spine_Settings_UI_NoOptionsAvailable>
+</LanguageData>

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Spine.Tests</AssemblyName>
+    <RootNamespace>Spine.Tests</RootNamespace>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Source\Spine\Core\Revisions\RevisionSource.cs"
+             Link="Foundation\RevisionSource.cs" />
+    <Compile Include="..\Source\Spine\Core\DirtyTracking\SparseDirtySets.cs"
+             Link="Foundation\SparseDirtySets.cs" />
+    <Compile Include="..\Source\Spine\Core\Caching\BoundedLruCache.cs"
+             Link="Foundation\BoundedLruCache.cs" />
+    <Compile Include="..\Source\Spine\Core\Collections\ImmutableSnapshot.cs"
+             Link="Foundation\ImmutableSnapshot.cs" />
+    <Compile Include="..\Source\Spine\Core\Diagnostics\RenderDiagnostics.cs"
+             Link="Foundation\RenderDiagnostics.cs" />
+    <Compile Include="..\Source\Spine\Core\Diagnostics\ApiDescriptors.cs"
+             Link="Foundation\ApiDescriptors.cs" />
+    <Compile Include="..\Source\Spine\Core\Rendering\RenderPipeline.cs"
+             Link="Foundation\RenderPipeline.cs" />
+  </ItemGroup>
+</Project>
