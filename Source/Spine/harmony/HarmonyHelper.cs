@@ -13,44 +13,66 @@ namespace Spine.Harmony
     /// </summary>
     public static class HarmonyHelper
     {
-        private static readonly HarmonyLib.Harmony _harmony = new HarmonyLib.Harmony("com.modapi.shared");
-
         /// <summary>
         /// Adds a Prefix patch to a method.
         /// </summary>
+        /// <param name="harmony">The consuming mod's owned Harmony instance.</param>
         /// <typeparam name="T">The target class containing the method to patch.</typeparam>
         /// <param name="methodName">The name of the method to patch.</param>
         /// <param name="patchType">The class containing the patch method.</param>
         /// <param name="patchMethodName">The name of the prefix method.</param>
-        public static void AddPrefix<T>(string methodName, Type patchType, string patchMethodName)
+        public static void AddPrefix<T>(
+            HarmonyLib.Harmony harmony,
+            string methodName,
+            Type patchType,
+            string patchMethodName)
         {
             var prefix = new HarmonyMethod(AccessTools.Method(patchType, patchMethodName));
-            TryPatchMethod(typeof(T), methodName, prefix: prefix);
+            TryPatchMethod(harmony, typeof(T), methodName, prefix: prefix);
         }
 
         /// <summary>
         /// Adds a Postfix patch to a method.
         /// </summary>
+        /// <param name="harmony">The consuming mod's owned Harmony instance.</param>
         /// <typeparam name="T">The target class containing the method to patch.</typeparam>
         /// <param name="methodName">The name of the method to patch.</param>
         /// <param name="patchType">The class containing the patch method.</param>
         /// <param name="patchMethodName">The name of the postfix method.</param>
-        public static void AddPostfix<T>(string methodName, Type patchType, string patchMethodName)
+        public static void AddPostfix<T>(
+            HarmonyLib.Harmony harmony,
+            string methodName,
+            Type patchType,
+            string patchMethodName)
         {
             var postfix = new HarmonyMethod(AccessTools.Method(patchType, patchMethodName));
-            TryPatchMethod(typeof(T), methodName, postfix: postfix);
+            TryPatchMethod(harmony, typeof(T), methodName, postfix: postfix);
         }
 
         /// <summary>
         /// Attempts to patch a method with provided Harmony methods. 
         /// Logs errors if the target method is not found.
         /// </summary>
-        public static bool TryPatchMethod(Type targetType, string methodName, 
-            HarmonyMethod prefix = null, HarmonyMethod postfix = null, 
+        /// <param name="harmony">
+        /// The consuming mod's owned Harmony instance. Spine deliberately has no
+        /// shared fallback owner because patches must remain attributable and
+        /// independently unpatchable.
+        /// </param>
+        public static bool TryPatchMethod(
+            HarmonyLib.Harmony harmony,
+            Type targetType,
+            string methodName,
+            HarmonyMethod prefix = null, HarmonyMethod postfix = null,
             HarmonyMethod transpiler = null)
         {
             try
             {
+                if (harmony == null)
+                {
+                    MMLog.WriteError(
+                        "[HarmonyHelper] Consumer Harmony instance is null.");
+                    return false;
+                }
                 if (targetType == null)
                 {
                     MMLog.WriteError("[HarmonyHelper] Target type is null.");
@@ -64,10 +86,12 @@ namespace Spine.Harmony
                     return false;
                 }
 
-                _harmony.Patch(original, prefix, postfix, transpiler);
+                harmony.Patch(original, prefix, postfix, transpiler);
                 
                 string patchType = prefix != null ? "Prefix" : (postfix != null ? "Postfix" : "Transpiler");
-                MMLog.Write($"[HarmonyHelper] Success: Applied {patchType} to {targetType.Name}.{methodName}");
+                MMLog.Write(
+                    $"[HarmonyHelper] Success: Applied {patchType} to " +
+                    $"{targetType.Name}.{methodName} as owner {harmony.Id}");
                 return true;
             }
             catch (Exception ex)

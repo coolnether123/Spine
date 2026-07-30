@@ -13,6 +13,11 @@ Better Work Tab remains unchanged and continues compiling its embedded copy.
 Consumer mods reference `Spine.dll` and declare `CoolNether123.Spine` in
 `About.xml`; they never bundle the DLL themselves.
 
+Harmony helpers require the consuming mod to pass its own `Harmony` instance.
+Spine never owns consumer patches under a shared fallback ID. This keeps patch
+diagnostics attributable and lets one mod unpatch its work without affecting
+another consumer.
+
 BWT-only tutorials, work-tab behavior, drag/drop rendering, and external
 `ModAPI` tooling were not copied. Three optional BWT Harmony-manager files were
 also excluded because BWT does not compile them and they depend on unrelated
