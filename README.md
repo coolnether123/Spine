@@ -3,7 +3,9 @@
 Spine is the feature-neutral runtime shared by CoolNether123 RimWorld mods.
 It provides settings/UI components, bounded caches, revision and dirty-state
 utilities, Harmony ownership helpers, and guarded transpiler building blocks.
-It does not add player-facing gameplay by itself.
+It also keeps RimWorld tooltip measurement consistent with tooltip rendering,
+preventing oversized boxes and bottom-line flicker caused by leaked UI font
+state. It does not add player-facing gameplay by itself.
 
 ## Install
 

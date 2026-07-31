@@ -18,6 +18,15 @@ Spine never owns consumer patches under a shared fallback ID. This keeps patch
 diagnostics attributable and lets one mod unpatch its work without affecting
 another consumer.
 
+Spine does own one feature-neutral global UI correction under the dedicated
+`CoolNether123.Spine.StableTooltipSizing` Harmony ID. RimWorld calculates
+`ActiveTip.TipRect` before consistently selecting the small tooltip font, so
+the inherited global font can produce a rectangle that disagrees with the text
+actually drawn. Spine temporarily selects `GameFont.Small` only during that
+measurement and restores the caller's font in both normal and exceptional
+paths. This stabilizes tooltip height and prevents bottom-line flicker without
+changing tooltip text, timing, placement policy, or consumer UI state.
+
 BWT-only tutorials, work-tab behavior, drag/drop rendering, and external
 `ModAPI` tooling were not copied. Three optional BWT Harmony-manager files were
 also excluded because BWT does not compile them and they depend on unrelated
