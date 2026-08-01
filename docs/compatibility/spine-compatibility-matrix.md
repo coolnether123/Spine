@@ -30,5 +30,5 @@ packages, and dependency-ordered loading unless stated otherwise.
 | HugsLib/XML/settings/performance frameworks | Not installed in local catalog; no static dependency | Inconclusive | Test only when locally sourced and relevant |
 | Royalty/Ideology/Biotech/Anomaly/Odyssey | No Spine DLC code path; not run individually | N/A for Spine | Cover consumer DLC surfaces together in one later grouped lane |
 
-Evidence root for grouped rows:
-`C:\Users\PrecisionX\AppData\Local\Temp\RimWorldAgentTasks\1.6\TechSenseFilters-2a52c4605fae4681aaa37f09320e8a9e`.
+Evidence for grouped rows was captured under harness session
+`TechSenseFilters-2a52c4605fae4681aaa37f09320e8a9e`.

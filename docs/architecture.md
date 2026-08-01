@@ -36,16 +36,24 @@ and proven RimWorld-neutral primitives. TechSense production knowledge,
 prisoner timing, SOS2 weapon behavior, Faction Lens world-map policy, and Better
 Work Tab behavior remain outside every Spine facade.
 
+`SpineApi.Settings` is the stable mod-settings-page facade. It accepts a
+consumer-owned settings object and definitions, then owns the standard drawer,
+localized common labels, simple/advanced view state, contextual-navigation
+lease, and page disposal. It also exposes the exact definition-driven scribing
+operation. Consumers continue to own settings fields, definition IDs, labels,
+tooltips, callbacks, write timing, and gameplay effects. This facade replaces
+the same page wrapper and translation fallback previously repeated by each
+gameplay mod.
+
 Harmony helpers require the consuming mod to pass its own `Harmony` instance.
 Spine never owns consumer patches under a shared fallback ID. This keeps patch
 diagnostics attributable and lets one mod unpatch its work without affecting
 another consumer.
 
 Tooltip stabilization belongs behind an opt-in UI capability facade; loading
-Spine alone must not install it. The current implementation still installs a
-global correction under the dedicated
-`CoolNether123.Spine.StableTooltipSizing` Harmony ID and therefore does not yet
-meet that contract. RimWorld calculates
+Spine alone does not install it. The current implementation acquires and
+releases the dedicated `CoolNether123.Spine.StableTooltipSizing` Harmony patch
+through consumer-owned leases. RimWorld calculates
 `ActiveTip.TipRect` before consistently selecting the small tooltip font, so
 the inherited global font can produce a rectangle that disagrees with the text
 actually drawn. Spine temporarily selects `GameFont.Small` only during that

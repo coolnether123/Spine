@@ -36,7 +36,7 @@ fallback behavior to Spine.
 
 | Item | Exact source/version | Acquired or snapshot date |
 |---|---|---|
-| RimWorld | Local canonical runtime `H:\Games\RimWorld1-6-4871Win64`, in-game `1.6.4871 rev574`; harness manifest labels it `1.6.4871 rev573` | local install; tested 2026-07-31 |
+| RimWorld | Local canonical runtime, in-game `1.6.4871 rev574`; harness manifest labels it `1.6.4871 rev573` | local install; tested 2026-07-31 |
 | DLC | Core only; `ModsConfig.xml` has `<knownExpansions />` and the local install has only `Data\Core` | tested 2026-07-31 |
 | Spine / `CoolNether123.Spine` | local source commit `f63a595ffc2a1ad7e60a6eec7b1d69fb48bf18b5`; tracked `Spine.dll` SHA-256 `F0773EC3E03DE4B35F5AA10AFFFAB42484BDB12BB38AFD7A061D97322F6D0C54` | source snapshot 2026-07-31 |
 | TechSense Filters / `CoolNether123.TechSenseFilters` | local source commit `9ad803dedf896d237e90c71a00209fc743a449a9` | staged 2026-07-31 |
@@ -77,8 +77,8 @@ TechSense Filters + Spine used the same local runtime. Harness start-to-ready
 wall time was 11.993 seconds; opening its settings through the synchronous IPC
 command took 1.908 seconds including command polling and transport. These are
 coarse harness measurements, not frame-time measurements. The settings page
-rendered normally, and the process stopped cleanly. Evidence root:
-`C:\Users\PrecisionX\AppData\Local\Temp\RimWorldAgentTasks\1.6\TechSenseFilters-0649ae35cae84c88986bc495cab48028`.
+rendered normally, and the process stopped cleanly. Evidence session:
+`TechSenseFilters-0649ae35cae84c88986bc495cab48028`.
 Classification: **compatible with a documented limitation** (systemic Spine
 blockers above).
 
@@ -298,12 +298,11 @@ is in `docs/compatibility/spine-compatibility-matrix.md`.
 
 ## Evidence paths
 
-- All-consumer manifest/log/profile/captures:
-  `C:\Users\PrecisionX\AppData\Local\Temp\RimWorldAgentTasks\1.6\TechSenseFilters-2a52c4605fae4681aaa37f09320e8a9e`
-- One-consumer manifest/log/capture:
-  `C:\Users\PrecisionX\AppData\Local\Temp\RimWorldAgentTasks\1.6\TechSenseFilters-0649ae35cae84c88986bc495cab48028`
-- Clean generalized build:
-  `C:\Users\PrecisionX\AppData\Local\Temp\SpineCompatBuild-20260731`
+- All-consumer manifest/log/profile/captures: harness session
+  `TechSenseFilters-2a52c4605fae4681aaa37f09320e8a9e`
+- One-consumer manifest/log/capture: harness session
+  `TechSenseFilters-0649ae35cae84c88986bc495cab48028`
+- Clean generalized build: external transient build artifact; not shipped
 - Existing Spine-alone runtime evidence: `Engineering/evidence.json` and
   `docs/verification.md`
 - Settings captures in the all-consumer session:

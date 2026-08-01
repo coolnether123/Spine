@@ -1,5 +1,6 @@
 using Spine.UI.Tooltips;
 using Spine.UI.ContextualSettings;
+using Spine.UI.SettingsFramework;
 
 namespace Spine.Api
 {
@@ -13,6 +14,9 @@ namespace Spine.Api
 
         public static ITooltipSizingFacade Tooltips =>
             StableTooltipSizing.Instance;
+
+        public static IModSettingsFacade Settings =>
+            ModSettingsFacade.Instance;
 
         public static IContextualSettingsFacade ContextualSettings =>
             ContextualSettingsService.Instance;

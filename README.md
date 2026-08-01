@@ -13,10 +13,9 @@ Spine before mods that declare `CoolNether123.Spine` as a dependency. Do not
 copy `Spine.dll` into consumer mods.
 
 Spine does not yet have a public Workshop or download URL. The verified local
-RimWorld 1.6 distribution therefore ships Spine and its four gameplay
-consumers together at
-`A:\Dev\RimWorld\Releases\1.6\2026-07-30-program-final`. Copy the `Spine`
-folder alongside any gameplay-mod folder you choose to install. Each gameplay
+RimWorld 1.6 distribution therefore ships Spine and its gameplay consumers
+together. Copy the `Spine` folder alongside any gameplay-mod folder you choose
+to install. Each gameplay
 mod remains independently selectable and depends on no other gameplay mod.
 
 ## Consumer rules
@@ -43,7 +42,14 @@ in [`docs/contextual-settings.md`](docs/contextual-settings.md).
 The final 1.6 checks are recorded in
 [`docs/verification.md`](docs/verification.md).
 
-Spine 1.1 advertises the versioned `ContextualSettings` capability. Consumers
+Spine 1.2 advertises the versioned `ModSettingsPages` capability. A consumer
+supplies its setting definitions and settings object once; the returned page
+owns the standard localized drawer, simple/advanced view state, contextual
+settings lease, and draw lifecycle. Gameplay mods still own every setting's
+meaning and persistence fields. This replaces repeated consumer-side settings
+UI wrappers without turning individual mod screens into Spine APIs.
+
+Spine also advertises the versioned `ContextualSettings` capability. Consumers
 bind a visible rectangle to an exact setting, settings group, or mod root.
 Spine owns Alt-left-click detection, overlap arbitration, event consumption,
 deferred settings-window opening, scrolling, highlighting, and optional

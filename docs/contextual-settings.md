@@ -35,6 +35,13 @@ The deferred-open Harmony owner is
 is acquired and removed with the final lease. Registration and opening failures
 are isolated; no scanning, polling, or gameplay work occurs with no consumer.
 
+From Spine runtime 1.2 onward, ordinary gameplay mods should acquire their
+settings page through `SpineApi.Settings`. The returned `IModSettingsPage`
+exposes the already-associated contextual-settings lease, so consumers do not
+repeat drawer construction or a second acquisition. Direct
+`SpineApi.ContextualSettings.Acquire` remains available for nonstandard pages
+and backward compatibility.
+
 ## Better Work Tab migration
 
 Better Work Tab remains independent and keeps its established domain router.

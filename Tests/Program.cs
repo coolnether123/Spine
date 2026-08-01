@@ -195,7 +195,8 @@ namespace Spine.Tests
                 new SemanticVersion(1, 0, 0),
                 SpineCapability.Settings |
                 SpineCapability.TooltipSizing |
-                SpineCapability.ContextualSettings);
+                SpineCapability.ContextualSettings |
+                SpineCapability.ModSettingsPages);
             var runtime = SpineRuntimeFacade.Instance;
             var supported = runtime.Check(requirement);
             Assert(
@@ -206,9 +207,9 @@ namespace Spine.Tests
                 runtime.Descriptor.ApiId,
                 "runtime facade API id");
             AssertEqual(
-                new SemanticVersion(1, 1, 0),
+                new SemanticVersion(1, 2, 0),
                 runtime.Descriptor.Version,
-                "contextual capability runtime version");
+                "settings-page capability runtime version");
             runtime.Require(requirement);
 
             var unavailable = runtime.Check(new SpineRequirement(

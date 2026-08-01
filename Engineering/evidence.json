@@ -3,6 +3,17 @@
   "packageId": "coolnether123.spine",
   "rimWorldVersion": "1.6",
   "profilerMode": "absent",
+  "currentApi12": {
+    "verifiedUtc": "2026-08-01",
+    "sourceCommit": null,
+    "sourceState": "pre-release commit",
+    "testsPassed": 13,
+    "testsFailed": 0,
+    "buildExitCode": 0,
+    "buildStderrSha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+    "modAssemblySizeBytes": 330240,
+    "modAssemblySha256": "196532364DE045CB10BE23C3C7A2AB1E2E5D4A66E4F12AFBA655DCDE1E7C12DB"
+  },
   "verification": {
     "verifiedUtc": "2026-07-30T21:58:38Z",
     "productSourceCommit": "650fb95835d187777fae314e1de361b8991b33ee",
@@ -22,7 +33,7 @@
       "harmonySha256": "7B9E756306FA3D7620E02A857C8927A6AB04973F9BD8A77D3866700A6DEAC55C",
       "modAssemblySha256": "2441959E82AA5CAC5C96E7456213B21D1FB67881E314F85F54373A4DB8C0E2AA",
       "freshAssemblyMatchedTracked": true,
-      "outputRoot": "C:\\Users\\PrecisionX\\AppData\\Local\\Temp\\SpineFinalVerification-d0e66cc2322842b1ba2d637e5c8e4089",
+      "outputArtifact": "external transient verification artifact; not shipped",
       "stdoutSha256": "ADE1D1C972414559AD8455B9A5CD24573031B2EE3DFEBA3904B2156D1138CFCE",
       "stderrSha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
     },
@@ -31,7 +42,7 @@
       "succeeded": true
     },
     "runtime": {
-      "evidencePath": "C:\\Users\\PrecisionX\\AppData\\Local\\Temp\\RimWorldAgentLive5-260d9cec699e41f29d0a407688b3f50c\\live-concurrency-result.json",
+      "evidenceArtifact": "external transient harness artifact; not shipped",
       "evidenceSha256": "86BFE4FE49EDABC190FEADF0C93E41B3B25918F7B71DD2435B4C015CF571A6A6",
       "laneId": "live-test-0-fdcd36b38ff44fc69637368177b8a7b5",
       "activeMods": [

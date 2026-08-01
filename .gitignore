@@ -4,3 +4,6 @@
 *.suo
 *.user
 Engineering/artifacts/
+1.6/Assemblies/build/
+1.6/Assemblies/*.log
+1.6/Assemblies/*.pdb

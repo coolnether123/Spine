@@ -68,15 +68,32 @@ namespace Spine.UI.ContextualSettings
                         "Contextual settings consumer is already registered: " + consumerId);
                 }
 
+                EnsureInstalled();
                 var registration = new ConsumerRegistration(
                     consumerId,
                     mod,
                     settingsDrawer,
                     settingsObject);
-                consumers.Add(consumerId, registration);
-                router.Acquire(consumerId);
-                EnsureInstalled();
-                return new Lease(this, registration);
+                bool routerAcquired = false;
+                try
+                {
+                    router.Acquire(consumerId);
+                    routerAcquired = true;
+                    consumers.Add(consumerId, registration);
+                    return new Lease(this, registration);
+                }
+                catch
+                {
+                    if (routerAcquired)
+                    {
+                        router.Release(consumerId);
+                    }
+                    if (consumers.Count == 0)
+                    {
+                        Uninstall();
+                    }
+                    throw;
+                }
             }
         }
 
@@ -183,13 +200,22 @@ namespace Spine.UI.ContextualSettings
                 throw new MissingMethodException(typeof(Root).FullName, "Update");
             }
 
-            harmony = new HarmonyLib.Harmony(HarmonyId);
-            harmony.Patch(
-                update,
-                postfix: new HarmonyMethod(
-                    typeof(ContextualSettingsService),
-                    nameof(AfterRootUpdate)));
-            installed = true;
+            var instance = new HarmonyLib.Harmony(HarmonyId);
+            try
+            {
+                instance.Patch(
+                    update,
+                    postfix: new HarmonyMethod(
+                        typeof(ContextualSettingsService),
+                        nameof(AfterRootUpdate)));
+                harmony = instance;
+                installed = true;
+            }
+            catch
+            {
+                instance.UnpatchAll(HarmonyId);
+                throw;
+            }
         }
 
         private static void AfterRootUpdate()
@@ -254,11 +280,16 @@ namespace Spine.UI.ContextualSettings
                     return;
                 }
 
-                deferred.Clear();
-                harmony.UnpatchAll(HarmonyId);
-                harmony = null;
-                installed = false;
+                Uninstall();
             }
+        }
+
+        private void Uninstall()
+        {
+            deferred.Clear();
+            harmony?.UnpatchAll(HarmonyId);
+            harmony = null;
+            installed = false;
         }
 
         private sealed class ConsumerRegistration

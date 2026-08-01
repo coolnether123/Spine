@@ -168,7 +168,8 @@ namespace Spine.Api
         HarmonyPatching = 1UL << 9,
         FluentTranspilers = 1UL << 10,
         TooltipSizing = 1UL << 11,
-        ContextualSettings = 1UL << 12
+        ContextualSettings = 1UL << 12,
+        ModSettingsPages = 1UL << 13
     }
 
     public readonly struct SpineApiDescriptor

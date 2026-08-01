@@ -2,7 +2,7 @@
 
 Copied on 2026-07-30 from the read-only Better Work Tab worktree:
 
-- repository: `A:\Dev\RimWorld\Mods\Better-Work-Tab`
+- repository: `Better-Work-Tab` (read-only local worktree)
 - branch: `Dev`
 - commit: `e57eee2ed748e283241eef4245893bab0bbff357`
 - source root: `Source\Spine`

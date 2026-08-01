@@ -5,4 +5,9 @@
   <Spine_Settings_UI_SelectsOption>Selecting {0} sets {1} to {0}.</Spine_Settings_UI_SelectsOption>
   <Spine_Settings_UI_AddOption>Add option</Spine_Settings_UI_AddOption>
   <Spine_Settings_UI_NoOptionsAvailable>No options available</Spine_Settings_UI_NoOptionsAvailable>
+  <Spine_Settings_UI_Simple>Simple</Spine_Settings_UI_Simple>
+  <Spine_Settings_UI_Advanced>Advanced</Spine_Settings_UI_Advanced>
+  <Spine_Settings_UI_NoResults>No settings match</Spine_Settings_UI_NoResults>
+  <Spine_Settings_UI_ResetToDefault>Reset to default</Spine_Settings_UI_ResetToDefault>
+  <Spine_Settings_UI_EditColor>Edit</Spine_Settings_UI_EditColor>
 </LanguageData>

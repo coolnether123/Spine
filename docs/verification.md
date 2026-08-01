@@ -1,94 +1,39 @@
 # Spine 1.6 verification
 
-Verified product source:
-`650fb95835d187777fae314e1de361b8991b33ee`.
+## API 1.2 release candidate — 2026-08-01
 
-## Automated contracts
+Spine 1.2 adds the compact, feature-neutral `ModSettingsPages` facade on top
+of the existing contextual-settings navigation service. Acquisition is
+transactional: failed Harmony hook installation or registry publication rolls
+back without leaving a ghost consumer, and the final successful consumer
+release removes Spine-owned contextual hooks.
 
-Command:
+The current contract suite passed 13 tests with zero failures. It covers
+capability negotiation, duplicate registration, disposal, Alt-left-click
+routing, ordinary-click rejection, overlap priority, multiple consumers,
+deferred opening, exception isolation, exact/group/root fallback, scrolling,
+and highlight lifetime. The dedicated stable-tooltip test also passed and
+confirms that tooltip patches are opt-in, lease-scoped, idempotent, and restore
+RimWorld's UI font state.
+
+Commands:
 
 ```powershell
 dotnet run --project Tests\Mod.Tests.csproj -c Release
+powershell -ExecutionPolicy Bypass -File Tests\Test-StableTooltipSizing.ps1
 ```
 
-Result: 7 passed, 0 failed. Coverage includes revision monotonicity,
-dirty-region merging, bounded-cache eviction/accounting, registration and
-disposal, render-pipeline ordering and exception isolation, semantic
-capability comparison, immutable snapshots, and teardown clearing.
+The centralized RimWorld 1.6 build completed with zero warnings, zero errors,
+and empty stderr. The tracked `Spine.dll` is 330,240 bytes with SHA-256
+`196532364DE045CB10BE23C3C7A2AB1E2E5D4A66E4F12AFBA655DCDE1E7C12DB`.
+Its file and informational versions are `1.2.0.0` and `1.2.0`; the stable
+assembly version remains unchanged for binary compatibility. Exact game,
+Harmony, tooling, test, and runtime provenance is recorded in
+`Engineering/evidence.json`.
 
-## Clean generalized build and package
-
-`Resolve-RwtEnvironment` resolved RimWorld 1.6 plus Harmony, then
-`Invoke-RwtBuild` ran the Release build with `-RequireClean`.
-
-- Build exit code: 0.
-- Source dirty: false.
-- Tooling commit:
-  `d28e38b2aec5bfba8186282da0b060346489f4c7`.
-- Tooling dirty: false.
-- RimWorld version-manifest SHA-256:
-  `0174C74429A3B1D9B272002A055FDBBC6645A0BF24A085E8BF39FDD3407B505B`.
-- `Assembly-CSharp.dll` SHA-256:
-  `4A170804FBFEFABDB620D8914E584E58F822A58C6E304DCB76A67003588DAB28`.
-- Harmony SHA-256:
-  `7B9E756306FA3D7620E02A857C8927A6AB04973F9BD8A77D3866700A6DEAC55C`.
-- Fresh and tracked `Spine.dll` SHA-256:
-  `2441959E82AA5CAC5C96E7456213B21D1FB67881E314F85F54373A4DB8C0E2AA`.
-- Fresh DLL equals the tracked release DLL byte for byte.
-- Package validation:
-  `RWT-BUILD-PACKAGE-VALID`.
-- Build output:
-  `C:\Users\PrecisionX\AppData\Local\Temp\SpineFinalVerification-d0e66cc2322842b1ba2d637e5c8e4089`.
-- Build stdout SHA-256:
-  `ADE1D1C972414559AD8455B9A5CD24573031B2EE3DFEBA3904B2156D1138CFCE`.
-- Build stderr was empty; SHA-256:
-  `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855`.
-
-## Isolated runtime
-
-The profile-driven five-instance harness run included a dedicated Spine lane
-with exactly Core, Harmony, RimWorld Agent, and Spine active in memory.
-
-- Evidence:
-  `C:\Users\PrecisionX\AppData\Local\Temp\RimWorldAgentLive5-260d9cec699e41f29d0a407688b3f50c\live-concurrency-result.json`.
-- Evidence SHA-256:
-  `86BFE4FE49EDABC190FEADF0C93E41B3B25918F7B71DD2435B4C015CF571A6A6`.
-- Spine lane:
-  `live-test-0-fdcd36b38ff44fc69637368177b8a7b5`.
-- In-memory requested-mod assertion: passed.
-- Agent enabled, configuration retained, and shutdown requested: passed.
-- Exit code: 0.
-- Forced termination: false.
-- Player log SHA-256:
-  `D621DF842BC1691F9E3F354BFB39EBE0196185EFD1A687812169F2AF1717E2E1`.
-- Case-insensitive scan for `Exception`, `Error`, Harmony failures, and Spine
-  failures returned no matches.
-
-Spine owns no map component, save data, player window, tick loop, or gameplay
-state. UI interaction, save/load, performance, and removal behavior are
-therefore verified through the consumer-mod acceptance runs rather than
-inventing a feature for this library mod. TechSense Filters, Prisoner
-Interaction Timer, SOS2 Weapon Readouts, and Faction Lens each loaded the same
-tracked Spine DLL through declared runtime dependencies.
-
-## Better Work Tab boundary
-
-The source provenance is BWT `Dev` commit
-`e57eee2ed748e283241eef4245893bab0bbff357`. Better Work Tab source and metadata
-were not edited during extraction or this verification.
-
-## Stable tooltip sizing
-
-- Source commit `0f810466` adds the reusable `StableTooltipSizing` patch. The
-  shipping binary commit is `60ccb7f`; `Spine.dll` has SHA-256
-  `F0773EC3E03DE4B35F5AA10AFFFAB42484BDB12BB38AFD7A061D97322F6D0C54`.
-- The dedicated stable-tooltip gate and all seven existing Spine domain tests
-  passed. The clean shared build and package validation both passed.
-- Tooling commit `b810187ae950ace82484f0c5679b7e3e34e6f1e1` records the new immutable
-  dependency hash.
-- Combined lane `codex-root-b6379d6f4d6d43979f0b930ef8bd92e2` reports the
-  Spine prefix, postfix, and finalizer on `Verse.ActiveTip.get_TipRect`.
-- TechSense captures `gold-status-tooltip-final-20260801-000338-063.png` and
-  `gold-status-tooltip-moved-20260801-000354-887.png` retain the same compact
-  three-line height and complete bottom line while the pointer moves inside
-  the status square.
+Spine itself owns no map component, save data, player window, tick loop, or
+gameplay state. Live behavior is therefore verified through its consumers.
+The four earlier gameplay consumers and the four new consumers load one shared
+Spine assembly, while gameplay semantics and consumer-owned Harmony patches
+remain outside Spine. Better Work Tab remains a read-only behavioral source
+reference and is not made dependent on external Spine by this release.
