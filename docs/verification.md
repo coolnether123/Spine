@@ -76,3 +76,19 @@ tracked Spine DLL through declared runtime dependencies.
 The source provenance is BWT `Dev` commit
 `e57eee2ed748e283241eef4245893bab0bbff357`. Better Work Tab source and metadata
 were not edited during extraction or this verification.
+
+## Stable tooltip sizing
+
+- Source commit `0f810466` adds the reusable `StableTooltipSizing` patch. The
+  shipping binary commit is `60ccb7f`; `Spine.dll` has SHA-256
+  `F0773EC3E03DE4B35F5AA10AFFFAB42484BDB12BB38AFD7A061D97322F6D0C54`.
+- The dedicated stable-tooltip gate and all seven existing Spine domain tests
+  passed. The clean shared build and package validation both passed.
+- Tooling commit `b810187ae950ace82484f0c5679b7e3e34e6f1e1` records the new immutable
+  dependency hash.
+- Combined lane `codex-root-b6379d6f4d6d43979f0b930ef8bd92e2` reports the
+  Spine prefix, postfix, and finalizer on `Verse.ActiveTip.get_TipRect`.
+- TechSense captures `gold-status-tooltip-final-20260801-000338-063.png` and
+  `gold-status-tooltip-moved-20260801-000354-887.png` retain the same compact
+  three-line height and complete bottom line while the pointer moves inside
+  the status square.
