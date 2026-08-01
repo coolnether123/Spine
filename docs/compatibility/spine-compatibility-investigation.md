@@ -193,6 +193,15 @@ cases run from the standalone repository in CI. No existing test was altered.
 
 ## API placement and extraction audit
 
+The public API should be delivered as a few capability-focused facades, not as
+dozens of public single-purpose helpers. Each facade must own discovery,
+version/capability negotiation, lifecycle, ownership, and failure isolation.
+Its operations should be exact utilities with stable semantics that can serve
+multiple consumers. Helpers with one caller remain internal to the facade;
+helpers with one consumer remain in that consumer. This makes future internal
+changes possible without expanding the compatibility surface or pushing
+domain-specific behavior into Spine.
+
 Stable public API candidates, based on use by at least two real external
 consumers:
 
@@ -261,8 +270,9 @@ because a missing dependency should direct the player to a supported source.
 
 Release blockers:
 
-1. Implement a real Spine runtime version/capability handshake and consumer
-   requirement checks.
+1. Implement one runtime facade with a real version/capability handshake and
+   consumer requirement checks; capability facades, not implementation types,
+   are the supported public entry points.
 2. Stop automatic gameplay/UI patching when no consumer requests a service.
 3. If fluent transpilers are public release scope, ship and run the promised
    standalone control-flow fixture suite.
@@ -271,8 +281,8 @@ Worth implementing before public release:
 
 1. Add supported Spine download metadata to every consumer and Harmony metadata
    to Faction Lens.
-2. Publish the stable/experimental/internal API boundary and compatibility
-   policy for additive newer versions.
+2. Publish the facade boundaries plus the stable/experimental/internal policy
+   for additive newer versions, and keep one-caller helpers non-public.
 3. Add an all-consumer CI/runtime smoke that asserts one Spine assembly and
    owner-separated patches.
 

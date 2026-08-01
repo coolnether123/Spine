@@ -14,8 +14,9 @@ packages, and dependency-ordered loading unless stated otherwise.
 | All four consumers | Three maps, save/reload, world map, 2,000 ticks, all settings pages | Compatible with documented limitation | Retain all-consumer smoke; fix blockers |
 | BWT + external Spine | No dependency/reference; BWT embeds its own source; not staged | Integration opportunity | Plan migration separately; do not claim current integration |
 | Missing Spine | Required package and CLR dependency; harness rejects unresolved closure | Compatible with documented limitation | Supply dependency download URL; do not add silent fallback |
-| Older Spine | No minimum version or runtime handshake | Patch required | Advertise version/capabilities and fail clearly before service use |
-| Newer capability-compatible Spine | Descriptor unit type exists but is neither advertised nor consumed | Patch required | Add one current descriptor and consumer capability checks |
+| Older Spine | No minimum version or runtime handshake | Patch required | Negotiate required capabilities through one runtime facade and fail clearly before service use |
+| Newer capability-compatible Spine | Descriptor unit type exists but is neither advertised nor consumed | Patch required | Advertise capability facades through one runtime facade; do not expose implementation types |
+| Public API granularity | Many inherited utilities exist, including one-consumer and currently unused systems | Patch required | Keep a few cohesive facades public; expose exact reusable operations and keep one-caller helpers internal |
 | Shared registration/failure isolation | Unit tests quarantine throwing render provider and preserve/dispose healthy providers | Compatible | Keep owner-scoped disposable tokens |
 | Consumer removal | Restart-based RimWorld loading only; no hot unload | Compatible with documented limitation | Document restart requirement |
 | Repeated settings opening | Four clean 1920x1080 captures; independent persisted XML | Compatible | Add automated geometry/input checks later |
@@ -31,4 +32,3 @@ packages, and dependency-ordered loading unless stated otherwise.
 
 Evidence root for grouped rows:
 `C:\Users\PrecisionX\AppData\Local\Temp\RimWorldAgentTasks\1.6\TechSenseFilters-2a52c4605fae4681aaa37f09320e8a9e`.
-

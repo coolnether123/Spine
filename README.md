@@ -1,11 +1,10 @@
 # Spine
 
 Spine is the feature-neutral runtime shared by CoolNether123 RimWorld mods.
-It provides settings/UI components, bounded caches, revision and dirty-state
-utilities, Harmony ownership helpers, and guarded transpiler building blocks.
-It also keeps RimWorld tooltip measurement consistent with tooltip rendering,
-preventing oversized boxes and bottom-line flicker caused by leaked UI font
-state. It does not add player-facing gameplay by itself.
+It provides shared settings/UI infrastructure, guarded patching infrastructure,
+and proven RimWorld-neutral utilities. Its supported surface is being narrowed
+to cohesive capability facades so internal implementations can change without
+breaking every consumer. It does not add player-facing gameplay by itself.
 
 ## Install
 
@@ -22,8 +21,14 @@ mod remains independently selectable and depends on no other gameplay mod.
 
 ## Consumer rules
 
-- Pass the consumer's own `Harmony` instance to Spine patch helpers so Harmony
-  ownership remains attributable to that mod.
+- Enter Spine through its runtime and capability facades. Do not bind to
+  implementation types or infer support from an assembly version.
+- Request only the capabilities the consumer actually uses. Pass the
+  consumer's own ownership identity, including its `Harmony` instance for
+  patching, so diagnostics and teardown remain attributable to that mod.
+- Prefer exact utility operations with stable meaning. Do not request a public
+  API for a single mod action, screen, or special case; keep that code in the
+  consumer.
 - Depend only on the facilities the consumer actually uses.
 - Keep gameplay, compatibility adapters, and mod-specific settings definitions
   in the consumer repository.
@@ -35,3 +40,9 @@ Architecture and provenance are documented in
 [`docs/research/source-provenance.md`](docs/research/source-provenance.md).
 The final 1.6 checks are recorded in
 [`docs/verification.md`](docs/verification.md).
+
+The current binary predates the complete facade contract: runtime capability
+negotiation is not yet operational, and tooltip stabilization is still
+installed automatically. These are release blockers, not compatibility
+promises. See the compatibility investigation before adopting this build as a
+stable external API.
