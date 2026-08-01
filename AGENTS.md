@@ -32,8 +32,16 @@ failure-isolation, ownership, and version-negotiation contracts. Consumers
 must request a capability from the appropriate facade instead of discovering
 implementation types or calling unrelated static helpers directly.
 The public entry point is `SpineApi`: negotiate requirements through
-`SpineApi.Runtime` and acquire shared tooltip behavior through
-`SpineApi.Tooltips`. Keep implementation classes internal.
+`SpineApi.Runtime`, acquire shared tooltip behavior through
+`SpineApi.Tooltips`, and acquire contextual settings through
+`SpineApi.ContextualSettings`. Keep implementation classes internal.
+
+Contextual settings consumers bind screen-visible immediate-mode rectangles to
+exact, group, or root targets. Spine owns modifier/button detection, event
+consumption, screen-coordinate overlap arbitration, deferred settings opening,
+fallback, scrolling, highlighting, tooltip-hint composition, window lifecycle,
+and Harmony ownership. Keep the hook lease-scoped and remove it after the last
+consumer releases. Never add gameplay semantics to this facade.
 
 Facade methods should expose exact, reusable operations with stable semantics.
 Do not create a public method for every consumer action, screen, or special

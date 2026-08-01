@@ -38,11 +38,14 @@ mod remains independently selectable and depends on no other gameplay mod.
 Architecture and provenance are documented in
 [`docs/architecture.md`](docs/architecture.md) and
 [`docs/research/source-provenance.md`](docs/research/source-provenance.md).
+The contextual-settings public contract and BWT migration path are documented
+in [`docs/contextual-settings.md`](docs/contextual-settings.md).
 The final 1.6 checks are recorded in
 [`docs/verification.md`](docs/verification.md).
 
-The current binary predates the complete facade contract: runtime capability
-negotiation is not yet operational, and tooltip stabilization is still
-installed automatically. These are release blockers, not compatibility
-promises. See the compatibility investigation before adopting this build as a
-stable external API.
+Spine 1.1 advertises the versioned `ContextualSettings` capability. Consumers
+bind a visible rectangle to an exact setting, settings group, or mod root.
+Spine owns Alt-left-click detection, overlap arbitration, event consumption,
+deferred settings-window opening, scrolling, highlighting, and optional
+tooltip-hint composition. Its input hook exists only while a consumer holds a
+lease.

@@ -30,8 +30,6 @@ namespace Spine.UI.ContextualSettings
             new Dictionary<string, ConsumerRegistration>(StringComparer.Ordinal);
         private HarmonyLib.Harmony harmony;
         private bool installed;
-        private bool routedCurrentEvent;
-        private Event routedEvent;
 
         internal static readonly ContextualSettingsService Instance =
             new ContextualSettingsService();
@@ -106,34 +104,41 @@ namespace Spine.UI.ContextualSettings
             long frame = Time.frameCount;
             if (evt != null && evt.type == EventType.Repaint)
             {
+                Vector2 screenMin = GUIUtility.GUIToScreenPoint(
+                    new Vector2(visibleRect.xMin, visibleRect.yMin));
+                Vector2 screenMax = GUIUtility.GUIToScreenPoint(
+                    new Vector2(visibleRect.xMax, visibleRect.yMax));
                 lock (Sync)
                 {
                     router.Register(
                         consumer.ConsumerId,
                         new ContextualHitRect(
-                            visibleRect.x,
-                            visibleRect.y,
-                            visibleRect.width,
-                            visibleRect.height),
+                            screenMin.x,
+                            screenMin.y,
+                            screenMax.x - screenMin.x,
+                            screenMax.y - screenMin.y),
                         target,
                         options.Priority,
                         frame);
                 }
             }
 
-            if (evt == null || routedEvent == evt && routedCurrentEvent)
+            if (evt == null ||
+                evt.type != EventType.MouseDown ||
+                evt.button != 0 ||
+                !evt.alt)
             {
-                return evt != null && evt.type == EventType.Used;
+                return false;
             }
 
-            routedEvent = evt;
-            routedCurrentEvent = true;
+            Vector2 screenMouse = GUIUtility.GUIToScreenPoint(
+                evt.mousePosition);
             var pointerEvent = new ContextualPointerEvent(
-                ConvertEventType(evt.type),
+                ContextualPointerEventType.MouseDown,
                 evt.button,
                 evt.alt,
-                evt.mousePosition.x,
-                evt.mousePosition.y);
+                screenMouse.x,
+                screenMouse.y);
 
             ContextualBindingRecord winner;
             lock (Sync)
@@ -145,10 +150,7 @@ namespace Spine.UI.ContextualSettings
                     return false;
                 }
 
-                if (!deferred.Enqueue(() => OpenSettings(winnerConsumer, winner.Target)))
-                {
-                    return false;
-                }
+                deferred.Enqueue(() => OpenSettings(winnerConsumer, winner.Target));
             }
 
             evt.Use();
@@ -166,21 +168,6 @@ namespace Spine.UI.ContextualSettings
             }
 
             return featureTooltip.TrimEnd() + "\n\n" + hint;
-        }
-
-        private static ContextualPointerEventType ConvertEventType(EventType type)
-        {
-            switch (type)
-            {
-                case EventType.MouseDown:
-                    return ContextualPointerEventType.MouseDown;
-                case EventType.MouseMove:
-                    return ContextualPointerEventType.MouseMove;
-                case EventType.Repaint:
-                    return ContextualPointerEventType.Repaint;
-                default:
-                    return ContextualPointerEventType.None;
-            }
         }
 
         private void EnsureInstalled()
@@ -214,8 +201,6 @@ namespace Spine.UI.ContextualSettings
         {
             lock (Sync)
             {
-                routedCurrentEvent = false;
-                routedEvent = null;
                 deferred.Drain(exception =>
                     Log.ErrorOnce(
                         "[Spine] Contextual settings navigation failed safely: " + exception,

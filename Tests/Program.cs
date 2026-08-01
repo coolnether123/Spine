@@ -28,6 +28,8 @@ namespace Spine.Tests
             Run("contextual overlap priority and duplicate binding", TestContextualOverlap);
             Run("contextual multiple consumers release and cleanup", TestContextualLifecycle);
             Run("contextual deferred opening and exception isolation", TestContextualDeferredActions);
+            Run("contextual exact group and root navigation", TestContextualNavigation);
+            Run("contextual scroll and highlight presentation", TestContextualPresentation);
 
             Console.WriteLine($"RESULT: {passed} passed, {failed} failed");
             return failed == 0 ? 0 : 1;
@@ -327,6 +329,71 @@ namespace Spine.Tests
                 "healthy consumer can queue after failure");
             queue.Drain();
             AssertEqual(2, opened, "healthy navigation survives failure");
+        }
+
+        private static void TestContextualNavigation()
+        {
+            ContextualNavigationCandidate Lookup(string id)
+            {
+                switch (id)
+                {
+                    case "exact":
+                        return new ContextualNavigationCandidate(id, true, true);
+                    case "group":
+                        return new ContextualNavigationCandidate(id, true, false);
+                    case "hidden":
+                        return new ContextualNavigationCandidate(id, false, true);
+                    default:
+                        return default(ContextualNavigationCandidate);
+                }
+            }
+
+            ContextualNavigationPlan exact = ContextualNavigationResolver.Resolve(
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "exact", "group"),
+                Lookup);
+            AssertEqual("exact", exact.TargetId, "exact target retained");
+            Assert(exact.UseSimpleView, "exact target chooses simple view");
+            Assert(!exact.IncludeChildren, "exact target remains narrow");
+
+            ContextualNavigationPlan group = ContextualNavigationResolver.Resolve(
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Group, "group"),
+                Lookup);
+            AssertEqual("group", group.TargetId, "group target retained");
+            Assert(!group.UseSimpleView, "advanced-only group chooses advanced view");
+            Assert(group.IncludeChildren, "group includes its section");
+
+            ContextualNavigationPlan fallback = ContextualNavigationResolver.Resolve(
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "hidden", "group"),
+                Lookup);
+            AssertEqual("group", fallback.TargetId, "hidden exact target falls back to group");
+            Assert(fallback.IncludeChildren, "fallback group includes its section");
+
+            ContextualNavigationPlan root = ContextualNavigationResolver.Resolve(
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Root),
+                Lookup);
+            Assert(root.IsRoot, "root target opens unfiltered settings");
+
+            ContextualNavigationPlan missing = ContextualNavigationResolver.Resolve(
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "missing", "also-missing"),
+                Lookup);
+            Assert(missing.IsRoot, "missing exact and group safely fall back to root");
+        }
+
+        private static void TestContextualPresentation()
+        {
+            AssertEqual(75f,
+                ContextualPresentationMath.CenteredScroll(100f, 100f, 50f, 300f),
+                "target row centered");
+            AssertEqual(0f,
+                ContextualPresentationMath.CenteredScroll(10f, 100f, 30f, 300f),
+                "scroll clamps at top");
+            AssertEqual(200f,
+                ContextualPresentationMath.CenteredScroll(290f, 100f, 30f, 300f),
+                "scroll clamps at bottom");
+            Assert(ContextualPresentationMath.IsHighlightActive(11.45f, 10f, 1.45f),
+                "highlight remains active through its lifetime");
+            Assert(!ContextualPresentationMath.IsHighlightActive(11.46f, 10f, 1.45f),
+                "highlight expires after its lifetime");
         }
 
         private static ContextualSettingsRouterCore CreateContextRouter()

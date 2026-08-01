@@ -243,4 +243,89 @@ namespace Spine.UI.ContextualSettings
 
         internal void Clear() => pending = null;
     }
+
+    internal readonly struct ContextualNavigationCandidate
+    {
+        internal ContextualNavigationCandidate(
+            string id,
+            bool available,
+            bool visibleInSimple)
+        {
+            Id = id;
+            Available = available;
+            VisibleInSimple = visibleInSimple;
+        }
+
+        internal string Id { get; }
+        internal bool Available { get; }
+        internal bool VisibleInSimple { get; }
+    }
+
+    internal readonly struct ContextualNavigationPlan
+    {
+        internal ContextualNavigationPlan(
+            string targetId,
+            bool useSimpleView,
+            bool includeChildren)
+        {
+            TargetId = targetId;
+            UseSimpleView = useSimpleView;
+            IncludeChildren = includeChildren;
+        }
+
+        internal string TargetId { get; }
+        internal bool UseSimpleView { get; }
+        internal bool IncludeChildren { get; }
+        internal bool IsRoot => string.IsNullOrEmpty(TargetId);
+    }
+
+    internal static class ContextualNavigationResolver
+    {
+        internal static ContextualNavigationPlan Resolve(
+            ContextualSettingsTarget requested,
+            Func<string, ContextualNavigationCandidate> lookup)
+        {
+            if (requested.Level == ContextualSettingsTargetLevel.Root || lookup == null)
+            {
+                return default(ContextualNavigationPlan);
+            }
+
+            ContextualNavigationCandidate candidate = lookup(requested.SettingId);
+            bool fellBack = false;
+            if (!candidate.Available &&
+                requested.Level == ContextualSettingsTargetLevel.Exact &&
+                !string.IsNullOrEmpty(requested.FallbackGroupId))
+            {
+                candidate = lookup(requested.FallbackGroupId);
+                fellBack = true;
+            }
+
+            return candidate.Available
+                ? new ContextualNavigationPlan(
+                    candidate.Id,
+                    candidate.VisibleInSimple,
+                    requested.Level == ContextualSettingsTargetLevel.Group || fellBack)
+                : default(ContextualNavigationPlan);
+        }
+    }
+
+    internal static class ContextualPresentationMath
+    {
+        internal static float CenteredScroll(
+            float targetY,
+            float viewportHeight,
+            float focusedRowHeight,
+            float contentHeight)
+        {
+            float maximum = Math.Max(0f, contentHeight - viewportHeight);
+            float centered = targetY - ((viewportHeight - focusedRowHeight) * 0.5f);
+            return Math.Max(0f, Math.Min(centered, maximum));
+        }
+
+        internal static bool IsHighlightActive(
+            float now,
+            float startedAt,
+            float lifetime) =>
+            lifetime > 0f && now - startedAt <= lifetime;
+    }
 }

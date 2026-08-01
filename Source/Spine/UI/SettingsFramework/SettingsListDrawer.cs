@@ -180,10 +180,22 @@ namespace Spine.UI.SettingsFramework
             ContextualSettingsTarget requestedTarget,
             object settingsObject)
         {
-            SettingDefinition target = ResolveContextTarget(
+            ContextualNavigationPlan plan = ContextualNavigationResolver.Resolve(
                 requestedTarget,
-                settingsObject);
-            if (target == null)
+                id =>
+                {
+                    SettingDefinition definition = _hierarchy.GetById(id);
+                    bool available = definition != null &&
+                        (definition.VisibleWhen == null ||
+                            definition.VisibleWhen(settingsObject)) &&
+                        (definition.ShowInSimpleView ||
+                            definition.ShowInAdvancedView);
+                    return new ContextualNavigationCandidate(
+                        definition?.Id,
+                        available,
+                        definition?.ShowInSimpleView == true);
+                });
+            if (plan.IsRoot)
             {
                 ClearActiveFilter();
                 ClearSearch();
@@ -194,13 +206,14 @@ namespace Spine.UI.SettingsFramework
                 return;
             }
 
-            string targetId = target.Id;
+            string targetId = plan.TargetId;
+            SettingDefinition target = _hierarchy.GetById(targetId);
             var filter = new SettingsFilterDefinition
             {
                 Id = "spine.context." + targetId,
                 Label = GetLabel?.Invoke(target) ?? target.Label ?? "Context",
                 Tooltip = GetTooltip?.Invoke(target) ?? target.Tooltip,
-                IncludeChildrenOfMatches = true,
+                IncludeChildrenOfMatches = plan.IncludeChildren,
                 Predicate = (definition, _) =>
                     definition != null &&
                     string.Equals(
@@ -210,7 +223,7 @@ namespace Spine.UI.SettingsFramework
             };
 
             ApplyContextFilter(filter, targetId);
-            _pendingContextViewMode = target.ShowInSimpleView
+            _pendingContextViewMode = plan.UseSimpleView
                 ? SettingsViewMode.Simple
                 : SettingsViewMode.Advanced;
         }
@@ -1304,43 +1317,6 @@ namespace Spine.UI.SettingsFramework
             _highlightStartedAt = Time.realtimeSinceStartup;
         }
 
-        private SettingDefinition ResolveContextTarget(
-            ContextualSettingsTarget requestedTarget,
-            object settingsObject)
-        {
-            if (requestedTarget.Level == ContextualSettingsTargetLevel.Root)
-            {
-                return null;
-            }
-
-            SettingDefinition exact = _hierarchy.GetById(
-                requestedTarget.SettingId);
-            if (IsContextTargetAvailable(exact, settingsObject))
-            {
-                return exact;
-            }
-
-            if (requestedTarget.Level == ContextualSettingsTargetLevel.Exact &&
-                !string.IsNullOrEmpty(requestedTarget.FallbackGroupId))
-            {
-                SettingDefinition fallback = _hierarchy.GetById(
-                    requestedTarget.FallbackGroupId);
-                if (IsContextTargetAvailable(fallback, settingsObject))
-                {
-                    return fallback;
-                }
-            }
-
-            return null;
-        }
-
-        private static bool IsContextTargetAvailable(
-            SettingDefinition target,
-            object settingsObject) =>
-            target != null &&
-            (target.VisibleWhen == null || target.VisibleWhen(settingsObject)) &&
-            (target.ShowInSimpleView || target.ShowInAdvancedView);
-
         private void RevealDisabledAncestorChain(string settingId)
         {
             SettingDefinition setting = _hierarchy.GetById(settingId);
@@ -1472,7 +1448,10 @@ namespace Spine.UI.SettingsFramework
             }
 
             float age = Time.realtimeSinceStartup - _highlightStartedAt;
-            if (age > FocusHighlightSeconds)
+            if (!ContextualPresentationMath.IsHighlightActive(
+                Time.realtimeSinceStartup,
+                _highlightStartedAt,
+                FocusHighlightSeconds))
             {
                 _highlightedSettingId = null;
                 return;
@@ -1549,8 +1528,11 @@ namespace Spine.UI.SettingsFramework
                 viewHeight += rowHeight;
             }
 
-            float maxScrollY = Mathf.Max(0f, viewHeight - listHeight);
-            _scrollPosition.y = Mathf.Clamp(targetY - ((listHeight - RowHeight) * 0.5f), 0f, maxScrollY);
+            _scrollPosition.y = ContextualPresentationMath.CenteredScroll(
+                targetY,
+                listHeight,
+                RowHeight,
+                viewHeight);
             _scrollPosition.x = 0f;
         }
 
