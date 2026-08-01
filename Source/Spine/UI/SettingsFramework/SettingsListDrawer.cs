@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using RimWorld;
+using Spine.UI.ContextualSettings;
 using UnityEngine;
 using Verse;
 
@@ -30,6 +31,7 @@ namespace Spine.UI.SettingsFramework
         private string _pendingFocusSettingId;
         private string _highlightedSettingId;
         private float _highlightStartedAt;
+        private SettingsViewMode? _pendingContextViewMode;
         private string _lastSearchClickSettingId;
         private float _lastSearchClickTime = -1f;
         private Vector2 _lastSearchClickPosition;
@@ -174,6 +176,45 @@ namespace Spine.UI.SettingsFramework
             ClearSearch();
         }
 
+        internal void PrepareContextNavigation(
+            ContextualSettingsTarget requestedTarget,
+            object settingsObject)
+        {
+            SettingDefinition target = ResolveContextTarget(
+                requestedTarget,
+                settingsObject);
+            if (target == null)
+            {
+                ClearActiveFilter();
+                ClearSearch();
+                _scrollPosition = Vector2.zero;
+                _pendingFocusSettingId = null;
+                _highlightedSettingId = null;
+                _pendingContextViewMode = null;
+                return;
+            }
+
+            string targetId = target.Id;
+            var filter = new SettingsFilterDefinition
+            {
+                Id = "spine.context." + targetId,
+                Label = GetLabel?.Invoke(target) ?? target.Label ?? "Context",
+                Tooltip = GetTooltip?.Invoke(target) ?? target.Tooltip,
+                IncludeChildrenOfMatches = true,
+                Predicate = (definition, _) =>
+                    definition != null &&
+                    string.Equals(
+                        definition.Id,
+                        targetId,
+                        StringComparison.OrdinalIgnoreCase)
+            };
+
+            ApplyContextFilter(filter, targetId);
+            _pendingContextViewMode = target.ShowInSimpleView
+                ? SettingsViewMode.Simple
+                : SettingsViewMode.Advanced;
+        }
+
         /// <summary>
         /// Draws the full UI for the settings list including search and view toggle.
         /// </summary>
@@ -186,6 +227,12 @@ namespace Spine.UI.SettingsFramework
             if (settingsObject == null)
             {
                 return;
+            }
+
+            if (_pendingContextViewMode.HasValue)
+            {
+                viewMode = _pendingContextViewMode.Value;
+                _pendingContextViewMode = null;
             }
 
             const float headerHeight = 30f;
@@ -1256,6 +1303,43 @@ namespace Spine.UI.SettingsFramework
             _highlightedSettingId = settingId;
             _highlightStartedAt = Time.realtimeSinceStartup;
         }
+
+        private SettingDefinition ResolveContextTarget(
+            ContextualSettingsTarget requestedTarget,
+            object settingsObject)
+        {
+            if (requestedTarget.Level == ContextualSettingsTargetLevel.Root)
+            {
+                return null;
+            }
+
+            SettingDefinition exact = _hierarchy.GetById(
+                requestedTarget.SettingId);
+            if (IsContextTargetAvailable(exact, settingsObject))
+            {
+                return exact;
+            }
+
+            if (requestedTarget.Level == ContextualSettingsTargetLevel.Exact &&
+                !string.IsNullOrEmpty(requestedTarget.FallbackGroupId))
+            {
+                SettingDefinition fallback = _hierarchy.GetById(
+                    requestedTarget.FallbackGroupId);
+                if (IsContextTargetAvailable(fallback, settingsObject))
+                {
+                    return fallback;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsContextTargetAvailable(
+            SettingDefinition target,
+            object settingsObject) =>
+            target != null &&
+            (target.VisibleWhen == null || target.VisibleWhen(settingsObject)) &&
+            (target.ShowInSimpleView || target.ShowInAdvancedView);
 
         private void RevealDisabledAncestorChain(string settingId)
         {

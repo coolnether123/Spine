@@ -6,6 +6,7 @@ using Spine.Collections;
 using Spine.DirtyTracking;
 using Spine.Rendering;
 using Spine.Revisions;
+using Spine.UI.ContextualSettings;
 
 namespace Spine.Tests
 {
@@ -23,6 +24,10 @@ namespace Spine.Tests
             Run("pipeline ordering and provider exception isolation", TestPipelineIsolation);
             Run("semantic version and capability comparison", TestVersionCapabilities);
             Run("snapshot immutability and teardown clearing", TestSnapshotImmutability);
+            Run("contextual Alt-left detection and rejection", TestContextualInput);
+            Run("contextual overlap priority and duplicate binding", TestContextualOverlap);
+            Run("contextual multiple consumers release and cleanup", TestContextualLifecycle);
+            Run("contextual deferred opening and exception isolation", TestContextualDeferredActions);
 
             Console.WriteLine($"RESULT: {passed} passed, {failed} failed");
             return failed == 0 ? 0 : 1;
@@ -187,7 +192,8 @@ namespace Spine.Tests
                 "Spine.Tests",
                 new SemanticVersion(1, 0, 0),
                 SpineCapability.Settings |
-                SpineCapability.TooltipSizing);
+                SpineCapability.TooltipSizing |
+                SpineCapability.ContextualSettings);
             var runtime = SpineRuntimeFacade.Instance;
             var supported = runtime.Check(requirement);
             Assert(
@@ -197,6 +203,10 @@ namespace Spine.Tests
                 "CoolNether123.Spine",
                 runtime.Descriptor.ApiId,
                 "runtime facade API id");
+            AssertEqual(
+                new SemanticVersion(1, 1, 0),
+                runtime.Descriptor.Version,
+                "contextual capability runtime version");
             runtime.Require(requirement);
 
             var unavailable = runtime.Check(new SpineRequirement(
@@ -234,6 +244,121 @@ namespace Spine.Tests
             slot.Clear();
             Assert(slot.Current == null, "teardown releases snapshot");
         }
+
+        private static void TestContextualInput()
+        {
+            var router = CreateContextRouter();
+            Assert(Routes(router, ContextualPointerEventType.MouseDown, 0, true),
+                "Alt-left routes and therefore consumes");
+            Assert(!Routes(router, ContextualPointerEventType.MouseDown, 0, false),
+                "ordinary left rejected");
+            Assert(!Routes(router, ContextualPointerEventType.MouseDown, 1, true),
+                "right-click rejected");
+            Assert(!Routes(router, ContextualPointerEventType.MouseMove, 0, true),
+                "Alt-hover rejected");
+        }
+
+        private static void TestContextualOverlap()
+        {
+            var router = new ContextualSettingsRouterCore();
+            router.Acquire("consumer");
+            var rect = new ContextualHitRect(0f, 0f, 30f, 30f);
+            Assert(router.Register("consumer", rect,
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Group, "group"), 100, 10),
+                "group registered");
+            Assert(router.Register("consumer", rect,
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "exact"), -100, 10),
+                "exact registered");
+            Assert(!router.Register("consumer", rect,
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "exact"), -100, 10),
+                "duplicate rejected");
+            Assert(router.TryRoute(ContextClick(), 10, out ContextualBindingRecord winner),
+                "overlap routed");
+            AssertEqual("exact", winner.Target.SettingId,
+                "specificity outranks explicit priority");
+
+            router.Register("consumer", rect,
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "late"), -100, 10);
+            router.TryRoute(ContextClick(), 10, out winner);
+            AssertEqual("late", winner.Target.SettingId,
+                "registration order deterministically breaks ties");
+        }
+
+        private static void TestContextualLifecycle()
+        {
+            var router = new ContextualSettingsRouterCore();
+            var rect = new ContextualHitRect(0f, 0f, 30f, 30f);
+            router.Acquire("a");
+            router.Acquire("b");
+            router.Register("a", rect,
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "a"), 0, 5);
+            router.Register("b", rect,
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "b"), 1, 5);
+            AssertEqual(2, router.ConsumerCount, "two consumers acquired");
+            router.Release("b");
+            AssertEqual(1, router.ConsumerCount, "one consumer remains");
+            Assert(router.TryRoute(ContextClick(), 5, out ContextualBindingRecord winner),
+                "remaining consumer routes");
+            AssertEqual("a", winner.ConsumerId, "released consumer removed");
+            router.Release("a");
+            AssertEqual(0, router.ConsumerCount, "final consumer released");
+            AssertEqual(0, router.RegistrationCount, "registrations cleaned");
+            Assert(!router.TryRoute(ContextClick(), 5, out _),
+                "no routing or polling state without consumers");
+        }
+
+        private static void TestContextualDeferredActions()
+        {
+            var queue = new DeferredContextualActionQueue();
+            int opened = 0;
+            Assert(queue.Enqueue(() => opened++), "open queued");
+            AssertEqual(0, opened, "opening is deferred");
+            Assert(!queue.Enqueue(() => opened += 10), "stacked open rejected");
+            Assert(queue.Drain(), "deferred open drained");
+            AssertEqual(1, opened, "one settings window requested");
+
+            Exception isolated = null;
+            queue.Enqueue(() => throw new InvalidOperationException("bad target"));
+            Assert(queue.Drain(exception => isolated = exception),
+                "bad consumer action drained");
+            Assert(isolated is InvalidOperationException,
+                "bad target exception isolated");
+            Assert(queue.Enqueue(() => opened++),
+                "healthy consumer can queue after failure");
+            queue.Drain();
+            AssertEqual(2, opened, "healthy navigation survives failure");
+        }
+
+        private static ContextualSettingsRouterCore CreateContextRouter()
+        {
+            var router = new ContextualSettingsRouterCore();
+            router.Acquire("consumer");
+            router.Register(
+                "consumer",
+                new ContextualHitRect(0f, 0f, 30f, 30f),
+                new ContextualSettingsTarget(ContextualSettingsTargetLevel.Exact, "setting"),
+                0,
+                1);
+            return router;
+        }
+
+        private static bool Routes(
+            ContextualSettingsRouterCore router,
+            ContextualPointerEventType type,
+            int button,
+            bool alt) =>
+            router.TryRoute(
+                new ContextualPointerEvent(type, button, alt, 10f, 10f),
+                1,
+                out _);
+
+        private static ContextualPointerEvent ContextClick() =>
+            new ContextualPointerEvent(
+                ContextualPointerEventType.MouseDown,
+                0,
+                true,
+                10f,
+                10f);
 
         private static void Run(string name, Action test)
         {

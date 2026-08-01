@@ -24,5 +24,7 @@
              Link="Foundation\SpineRuntimeFacade.cs" />
     <Compile Include="..\Source\Spine\Core\Rendering\RenderPipeline.cs"
              Link="Foundation\RenderPipeline.cs" />
+    <Compile Include="..\Source\Spine\UI\ContextualSettings\ContextualSettingsRouterCore.cs"
+             Link="ContextualSettings\ContextualSettingsRouterCore.cs" />
   </ItemGroup>
 </Project>
