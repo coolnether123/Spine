@@ -7,6 +7,7 @@
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="TranspilerFixtures\**\*.cs" />
     <Compile Include="..\Source\Spine\Core\Revisions\RevisionSource.cs"
              Link="Foundation\RevisionSource.cs" />
     <Compile Include="..\Source\Spine\Core\DirtyTracking\SparseDirtySets.cs"
@@ -19,6 +20,8 @@
              Link="Foundation\RenderDiagnostics.cs" />
     <Compile Include="..\Source\Spine\Core\Diagnostics\ApiDescriptors.cs"
              Link="Foundation\ApiDescriptors.cs" />
+    <Compile Include="..\Source\Spine\Core\Diagnostics\SpineRuntimeFacade.cs"
+             Link="Foundation\SpineRuntimeFacade.cs" />
     <Compile Include="..\Source\Spine\Core\Rendering\RenderPipeline.cs"
              Link="Foundation\RenderPipeline.cs" />
   </ItemGroup>

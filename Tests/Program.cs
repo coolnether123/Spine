@@ -182,6 +182,42 @@ namespace Spine.Tests
             Assert(
                 !descriptor.Supports(release, SpineCapability.RenderAtlases),
                 "missing capability rejected");
+
+            var requirement = new SpineRequirement(
+                "Spine.Tests",
+                new SemanticVersion(1, 0, 0),
+                SpineCapability.Settings |
+                SpineCapability.TooltipSizing);
+            var runtime = SpineRuntimeFacade.Instance;
+            var supported = runtime.Check(requirement);
+            Assert(
+                supported.IsCompatible,
+                "runtime facade supports current requirement");
+            AssertEqual(
+                "CoolNether123.Spine",
+                runtime.Descriptor.ApiId,
+                "runtime facade API id");
+            runtime.Require(requirement);
+
+            var unavailable = runtime.Check(new SpineRequirement(
+                "Future.Consumer",
+                new SemanticVersion(1, 0, 0),
+                SpineCapability.RenderAtlases));
+            Assert(
+                !unavailable.IsCompatible,
+                "runtime facade rejects missing capability");
+            AssertEqual(
+                SpineCapability.RenderAtlases,
+                unavailable.MissingCapabilities,
+                "runtime facade reports exact missing capability");
+
+            var tooNew = runtime.Check(new SpineRequirement(
+                "Future.Consumer",
+                new SemanticVersion(2, 0, 0),
+                SpineCapability.None));
+            Assert(
+                !tooNew.IsCompatible,
+                "runtime facade rejects newer minimum");
         }
 
         private static void TestSnapshotImmutability()

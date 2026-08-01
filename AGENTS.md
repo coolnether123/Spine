@@ -31,6 +31,9 @@ as a small set of cohesive capability facades, with explicit lifecycle,
 failure-isolation, ownership, and version-negotiation contracts. Consumers
 must request a capability from the appropriate facade instead of discovering
 implementation types or calling unrelated static helpers directly.
+The public entry point is `SpineApi`: negotiate requirements through
+`SpineApi.Runtime` and acquire shared tooltip behavior through
+`SpineApi.Tooltips`. Keep implementation classes internal.
 
 Facade methods should expose exact, reusable operations with stable semantics.
 Do not create a public method for every consumer action, screen, or special

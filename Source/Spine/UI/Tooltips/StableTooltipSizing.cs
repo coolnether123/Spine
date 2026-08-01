@@ -1,68 +1,119 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
+using Spine.Api;
 using Verse;
 
 namespace Spine.UI.Tooltips
 {
     /// <summary>
-    /// Keeps RimWorld tooltip measurement consistent with tooltip rendering.
+    /// Opt-in service that keeps tooltip measurement consistent with rendering.
     /// </summary>
-    [StaticConstructorOnStartup]
-    public static class StableTooltipSizing
+    internal sealed class StableTooltipSizing : ITooltipSizingFacade
     {
         private const string HarmonyId =
             "CoolNether123.Spine.StableTooltipSizing";
-        private static readonly object InstallLock = new object();
+        private static readonly object Sync = new object();
+        private static readonly Dictionary<string, int> ConsumerLeases =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+        private static HarmonyLib.Harmony harmony;
+        private static MethodInfo target;
+        private static int activeLeaseCount;
         private static bool installed;
 
-        static StableTooltipSizing()
+        internal static readonly StableTooltipSizing Instance =
+            new StableTooltipSizing();
+
+        private StableTooltipSizing()
         {
-            EnsureInstalled();
         }
 
-        /// <summary>
-        /// Ensures the shared tooltip sizing correction is installed once.
-        /// Spine also installs it automatically during RimWorld startup.
-        /// </summary>
-        public static void EnsureInstalled()
+        public IDisposable Acquire(string consumerId)
+        {
+            if (string.IsNullOrWhiteSpace(consumerId))
+            {
+                throw new ArgumentException(
+                    "A tooltip-service consumer identifier is required.",
+                    nameof(consumerId));
+            }
+
+            lock (Sync)
+            {
+                EnsureInstalled();
+                ConsumerLeases.TryGetValue(consumerId, out var count);
+                ConsumerLeases[consumerId] = count + 1;
+                activeLeaseCount++;
+            }
+
+            return new Lease(consumerId);
+        }
+
+        private static void EnsureInstalled()
         {
             if (installed)
             {
                 return;
             }
 
-            lock (InstallLock)
+            target = AccessTools.PropertyGetter(
+                typeof(ActiveTip),
+                nameof(ActiveTip.TipRect));
+            if (target == null)
             {
-                if (installed)
-                {
-                    return;
-                }
-
-                MethodInfo target = AccessTools.PropertyGetter(
-                    typeof(ActiveTip),
+                throw new MissingMethodException(
+                    typeof(ActiveTip).FullName,
                     nameof(ActiveTip.TipRect));
-                if (target == null)
+            }
+
+            harmony = new HarmonyLib.Harmony(HarmonyId);
+            harmony.Patch(
+                target,
+                prefix: new HarmonyMethod(
+                    typeof(StableTooltipSizing),
+                    nameof(BeforeMeasure)),
+                postfix: new HarmonyMethod(
+                    typeof(StableTooltipSizing),
+                    nameof(AfterMeasure)),
+                finalizer: new HarmonyMethod(
+                    typeof(StableTooltipSizing),
+                    nameof(AfterMeasureFailure)));
+            installed = true;
+        }
+
+        private static void Release(string consumerId)
+        {
+            lock (Sync)
+            {
+                if (!ConsumerLeases.TryGetValue(
+                    consumerId,
+                    out var count))
                 {
-                    Log.Error(
-                        "[Spine] Unable to stabilize tooltips: " +
-                        "ActiveTip.TipRect was not found.");
                     return;
                 }
 
-                var harmony = new HarmonyLib.Harmony(HarmonyId);
-                harmony.Patch(
+                if (count <= 1)
+                {
+                    ConsumerLeases.Remove(consumerId);
+                }
+                else
+                {
+                    ConsumerLeases[consumerId] = count - 1;
+                }
+
+                activeLeaseCount--;
+                if (activeLeaseCount != 0 || !installed)
+                {
+                    return;
+                }
+
+                harmony.Unpatch(
                     target,
-                    prefix: new HarmonyMethod(
-                        typeof(StableTooltipSizing),
-                        nameof(BeforeMeasure)),
-                    postfix: new HarmonyMethod(
-                        typeof(StableTooltipSizing),
-                        nameof(AfterMeasure)),
-                    finalizer: new HarmonyMethod(
-                        typeof(StableTooltipSizing),
-                        nameof(AfterMeasureFailure)));
-                installed = true;
+                    HarmonyPatchType.All,
+                    HarmonyId);
+                installed = false;
+                harmony = null;
+                target = null;
             }
         }
 
@@ -83,6 +134,31 @@ namespace Spine.UI.Tooltips
         {
             Text.Font = __state;
             return __exception;
+        }
+
+        private sealed class Lease : IDisposable
+        {
+            private readonly string consumerId;
+            private bool disposed;
+
+            public Lease(string consumerId)
+            {
+                this.consumerId = consumerId;
+            }
+
+            public void Dispose()
+            {
+                lock (Sync)
+                {
+                    if (disposed)
+                    {
+                        return;
+                    }
+                    disposed = true;
+                }
+
+                Release(consumerId);
+            }
         }
     }
 }

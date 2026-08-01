@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Spine.TranspilerFixtures</AssemblyName>
+    <RootNamespace>Spine.TranspilerFixtures</RootNamespace>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Spine">
+      <HintPath>$(SpineFixtureAssembly)</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldManagedDir)\Assembly-CSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(RimWorldManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(RimWorldManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(RimWorldManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(RimWorldManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(RwtDependencyHarmony)</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="RequireFixtureDependencies" BeforeTargets="ResolveReferences">
+    <Error
+      Condition="'$(SpineFixtureAssembly)' == '' or !Exists('$(SpineFixtureAssembly)')"
+      Text="SpineFixtureAssembly must point to the fresh standalone Spine build." />
+    <Error
+      Condition="'$(RimWorldManagedDir)' == '' or !Exists('$(RimWorldManagedDir)\Assembly-CSharp.dll')"
+      Text="RimWorldManagedDir must point to RimWorld 1.6 managed assemblies." />
+    <Error
+      Condition="'$(RwtDependencyHarmony)' == '' or !Exists('$(RwtDependencyHarmony)')"
+      Text="RwtDependencyHarmony must resolve to the centralized Harmony assembly." />
+  </Target>
+</Project>
