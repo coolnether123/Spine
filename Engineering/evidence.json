@@ -5,11 +5,12 @@
   "profilerMode": "absent",
   "currentApi12": {
     "verifiedUtc": "2026-08-01",
-    "sourceCommit": null,
-    "sourceState": "pre-release commit",
+    "sourceCommit": "2c9b440237100736f016ccb2e9ae17f59b81233d",
+    "sourceState": "clean generalized build",
     "testsPassed": 13,
     "testsFailed": 0,
     "buildExitCode": 0,
+    "buildStdoutSha256": "EC374759541EBECA16A2BD4EA8A75E005C18DC924B154FBF8F3861DCEED6C7B6",
     "buildStderrSha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
     "modAssemblySizeBytes": 330240,
     "modAssemblySha256": "196532364DE045CB10BE23C3C7A2AB1E2E5D4A66E4F12AFBA655DCDE1E7C12DB"
