@@ -45,6 +45,12 @@ tooltips, callbacks, write timing, and gameplay effects. This facade replaces
 the same page wrapper and translation fallback previously repeated by each
 gameplay mod.
 
+Toolbar density is definition-driven inside the facade. Fewer than five
+configurable rows draw no search; ten or fewer use one unified view with no
+category or simple/advanced filters; larger pages may use the full toolbar.
+Contextual navigation clears transient search/filter state and only centers and
+highlights the resolved row. It never changes the visible setting population.
+
 Harmony helpers require the consuming mod to pass its own `Harmony` instance.
 Spine never owns consumer patches under a shared fallback ID. This keeps patch
 diagnostics attributable and lets one mod unpatch its work without affecting

@@ -3,6 +3,16 @@ using System.Collections.Generic;
 
 namespace Spine.UI.ContextualSettings
 {
+    internal static class ContextualTooltipComposition
+    {
+        internal static string FeatureOnly(string featureTooltip)
+        {
+            return string.IsNullOrWhiteSpace(featureTooltip)
+                ? null
+                : featureTooltip.TrimEnd();
+        }
+    }
+
     internal enum ContextualPointerEventType
     {
         None,

@@ -44,7 +44,7 @@ namespace Spine.UI.SettingsFramework
         private static readonly SpineApiDescriptor CurrentDescriptor =
             new SpineApiDescriptor(
                 "CoolNether123.Spine.ModSettingsPages",
-                new SemanticVersion(1, 0, 0),
+                new SemanticVersion(1, 1, 0),
                 SpineCapability.Settings |
                 SpineCapability.ContextualSettings |
                 SpineCapability.ModSettingsPages);

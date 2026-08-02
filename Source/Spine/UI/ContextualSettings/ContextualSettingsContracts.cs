@@ -64,6 +64,11 @@ namespace Spine.UI.ContextualSettings
 
     public readonly struct ContextualSettingsBindingOptions
     {
+        /// <summary>
+        /// Configures overlap priority and, when the feature already owns a
+        /// useful tooltip, lets Spine register that tooltip once. Contextual
+        /// settings never appends an Alt-click hint to world or feature UI.
+        /// </summary>
         public ContextualSettingsBindingOptions(
             int priority = 0,
             string featureTooltip = null,
@@ -78,6 +83,11 @@ namespace Spine.UI.ContextualSettings
 
         public int Priority { get; }
         public string FeatureTooltip { get; }
+
+        /// <summary>
+        /// Retained for binary compatibility. Spine no longer displays
+        /// contextual-settings hints beside gameplay features.
+        /// </summary>
         public string SettingsHint { get; }
         public bool RegisterTooltip { get; }
 
@@ -98,7 +108,7 @@ namespace Spine.UI.ContextualSettings
                 priority,
                 null,
                 settingsHint,
-                true);
+                false);
     }
 
     public interface IContextualSettingsLease : IDisposable

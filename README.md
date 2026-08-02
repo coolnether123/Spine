@@ -42,7 +42,7 @@ in [`docs/contextual-settings.md`](docs/contextual-settings.md).
 The final 1.6 checks are recorded in
 [`docs/verification.md`](docs/verification.md).
 
-Spine 1.2 advertises the versioned `ModSettingsPages` capability. A consumer
+Spine 1.3 advertises the versioned `ModSettingsPages` capability. A consumer
 supplies its setting definitions and settings object once; the returned page
 owns the standard localized drawer, simple/advanced view state, contextual
 settings lease, and draw lifecycle. Gameplay mods still own every setting's
@@ -52,6 +52,8 @@ UI wrappers without turning individual mod screens into Spine APIs.
 Spine also advertises the versioned `ContextualSettings` capability. Consumers
 bind a visible rectangle to an exact setting, settings group, or mod root.
 Spine owns Alt-left-click detection, overlap arbitration, event consumption,
-deferred settings-window opening, scrolling, highlighting, and optional
-tooltip-hint composition. Its input hook exists only while a consumer holds a
-lease.
+deferred settings-window opening, normal-page scrolling, and highlighting. It
+does not filter the page or add Alt-click hints to gameplay tooltips. Its input
+hook exists only while a consumer holds a lease. The settings facade also hides
+search, category filters, and view filters when the setting count is too small
+for them to be useful.

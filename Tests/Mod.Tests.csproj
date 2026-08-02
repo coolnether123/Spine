@@ -26,5 +26,7 @@
              Link="Foundation\RenderPipeline.cs" />
     <Compile Include="..\Source\Spine\UI\ContextualSettings\ContextualSettingsRouterCore.cs"
              Link="ContextualSettings\ContextualSettingsRouterCore.cs" />
+    <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingsPresentationPolicy.cs"
+             Link="SettingsFramework\SettingsPresentationPolicy.cs" />
   </ItemGroup>
 </Project>

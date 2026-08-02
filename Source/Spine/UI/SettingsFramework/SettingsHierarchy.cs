@@ -15,6 +15,8 @@ namespace Spine.UI.SettingsFramework
         private readonly Dictionary<string, List<SettingDefinition>> _childrenOf;
         private readonly List<SettingDefinition> _rootSettings;
 
+        public int SettingCount { get; }
+
         /// <summary>
         /// Creates a new hierarchy from a flat list of definitions.
         /// </summary>
@@ -33,6 +35,10 @@ namespace Spine.UI.SettingsFramework
 
                 _byId[def.Id] = def;
             }
+
+            SettingCount = _byId.Values.Count(definition =>
+                definition.Type != SettingType.Header &&
+                definition.Type != SettingType.Spacer);
 
             foreach (var def in _byId.Values)
             {
@@ -326,7 +332,14 @@ namespace Spine.UI.SettingsFramework
 
         private static bool IsVisibleInView(SettingDefinition def, SettingsViewMode viewMode)
         {
-            return viewMode == SettingsViewMode.Simple ? def.ShowInSimpleView : def.ShowInAdvancedView;
+            if (viewMode == SettingsViewMode.All)
+            {
+                return def.ShowInSimpleView || def.ShowInAdvancedView;
+            }
+
+            return viewMode == SettingsViewMode.Simple
+                ? def.ShowInSimpleView
+                : def.ShowInAdvancedView;
         }
 
         private static bool ReadBoolValue(SettingDefinition def, object settingsObject)
@@ -359,6 +372,7 @@ namespace Spine.UI.SettingsFramework
     public enum SettingsViewMode
     {
         Simple,
-        Advanced
+        Advanced,
+        All
     }
 }

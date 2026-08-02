@@ -14,9 +14,8 @@ namespace Spine.UI.ContextualSettings
     {
         internal const string ApiId = "CoolNether123.Spine.ContextualSettings";
         internal const string HarmonyId = ApiId;
-        internal static readonly SemanticVersion ApiVersion = new SemanticVersion(1, 0, 0);
-        private const string DefaultHint = "Alt-click to open settings";
-
+        internal static readonly SemanticVersion ApiVersion =
+            new SemanticVersion(1, 1, 0);
         private static readonly object Sync = new object();
         private static readonly FieldInfo DialogModField = AccessTools.Field(
             typeof(Dialog_ModSettings),
@@ -111,7 +110,8 @@ namespace Spine.UI.ContextualSettings
             Event evt = Event.current;
             if (options.RegisterTooltip)
             {
-                string tooltip = ComposeTooltip(options.FeatureTooltip, options.SettingsHint);
+                string tooltip = ContextualTooltipComposition.FeatureOnly(
+                    options.FeatureTooltip);
                 if (!string.IsNullOrEmpty(tooltip))
                 {
                     TooltipHandler.TipRegion(visibleRect, tooltip);
@@ -172,19 +172,6 @@ namespace Spine.UI.ContextualSettings
 
             evt.Use();
             return true;
-        }
-
-        private static string ComposeTooltip(string featureTooltip, string settingsHint)
-        {
-            string hint = string.IsNullOrWhiteSpace(settingsHint)
-                ? DefaultHint
-                : settingsHint.Trim();
-            if (string.IsNullOrWhiteSpace(featureTooltip))
-            {
-                return hint;
-            }
-
-            return featureTooltip.TrimEnd() + "\n\n" + hint;
         }
 
         private void EnsureInstalled()

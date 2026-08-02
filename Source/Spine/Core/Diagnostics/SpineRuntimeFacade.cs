@@ -10,7 +10,7 @@ namespace Spine.Api
         private static readonly SpineApiDescriptor CurrentDescriptor =
             new SpineApiDescriptor(
                 "CoolNether123.Spine",
-                new SemanticVersion(1, 2, 0),
+                new SemanticVersion(1, 3, 0),
                 SpineCapability.Revisions |
                 SpineCapability.DirtyRegions |
                 SpineCapability.BoundedCaches |

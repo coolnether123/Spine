@@ -7,6 +7,7 @@ using Spine.DirtyTracking;
 using Spine.Rendering;
 using Spine.Revisions;
 using Spine.UI.ContextualSettings;
+using Spine.UI.SettingsFramework;
 
 namespace Spine.Tests
 {
@@ -30,6 +31,8 @@ namespace Spine.Tests
             Run("contextual deferred opening and exception isolation", TestContextualDeferredActions);
             Run("contextual exact group and root navigation", TestContextualNavigation);
             Run("contextual scroll and highlight presentation", TestContextualPresentation);
+            Run("compact settings presentation thresholds", TestSettingsPresentationPolicy);
+            Run("contextual tooltips never add hints", TestContextualTooltipComposition);
 
             Console.WriteLine($"RESULT: {passed} passed, {failed} failed");
             return failed == 0 ? 0 : 1;
@@ -207,7 +210,7 @@ namespace Spine.Tests
                 runtime.Descriptor.ApiId,
                 "runtime facade API id");
             AssertEqual(
-                new SemanticVersion(1, 2, 0),
+                new SemanticVersion(1, 3, 0),
                 runtime.Descriptor.Version,
                 "settings-page capability runtime version");
             runtime.Require(requirement);
@@ -395,6 +398,39 @@ namespace Spine.Tests
                 "highlight remains active through its lifetime");
             Assert(!ContextualPresentationMath.IsHighlightActive(11.46f, 10f, 1.45f),
                 "highlight expires after its lifetime");
+        }
+
+        private static void TestSettingsPresentationPolicy()
+        {
+            Assert(!SettingsPresentationPolicy.ShowSearch(4),
+                "search must stay hidden below five settings");
+            Assert(SettingsPresentationPolicy.ShowSearch(5),
+                "search must appear at five settings");
+            Assert(!SettingsPresentationPolicy.ShowFilters(10),
+                "filters must stay hidden for ten settings");
+            Assert(!SettingsPresentationPolicy.ShowViewModes(10),
+                "view filtering must stay hidden for ten settings");
+            Assert(SettingsPresentationPolicy.ShowFilters(11),
+                "filters must appear above ten settings");
+            Assert(SettingsPresentationPolicy.ShowViewModes(11),
+                "view filtering must appear above ten settings");
+        }
+
+        private static void TestContextualTooltipComposition()
+        {
+            AssertEqual(
+                "Faction relationship",
+                ContextualTooltipComposition.FeatureOnly(
+                    "Faction relationship  "),
+                "feature tooltip changed");
+            AssertEqual<string>(
+                null,
+                ContextualTooltipComposition.FeatureOnly(null),
+                "hint-only binding created a tooltip");
+            AssertEqual<string>(
+                null,
+                ContextualTooltipComposition.FeatureOnly("   "),
+                "empty feature tooltip created a tooltip");
         }
 
         private static ContextualSettingsRouterCore CreateContextRouter()

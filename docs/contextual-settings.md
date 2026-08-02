@@ -1,7 +1,7 @@
 # Contextual settings capability
 
-Spine runtime 1.1 exposes `SpineApi.ContextualSettings` with capability ID
-`CoolNether123.Spine.ContextualSettings` version 1.0. Consumers negotiate
+Spine runtime 1.3 exposes `SpineApi.ContextualSettings` with capability ID
+`CoolNether123.Spine.ContextualSettings` version 1.1. Consumers negotiate
 `SpineCapability.ContextualSettings`, acquire one lease for the mod lifetime,
 and call `Bind` where a visible immediate-mode rectangle is known.
 
@@ -12,10 +12,11 @@ lease.Bind(
     ContextualSettingsBindingOptions.WithTooltip(featureTooltip));
 ```
 
-Exact targets fall back to the named group, then to the unfiltered mod settings
-root. Group targets show the group and its children. A root target opens the
-ordinary settings page. Hidden, renamed, or unavailable targets fail to the
-same safe root behavior.
+Exact targets fall back to the named group, then to the mod settings root. A
+context jump always clears search and explicit filters, shows the ordinary
+settings page, scrolls the resolved row into view, and briefly highlights that
+row. It never creates a temporary contextual filter. Hidden, renamed, or
+unavailable targets fail to the same safe root behavior.
 
 Bindings are recorded only while their UI is drawn. Alt-left-click is resolved
 in screen coordinates so rectangles from nested GUI groups and different
@@ -25,10 +26,19 @@ queues one settings open for the next update, scrolls the resolved row into
 view, and highlights it for 1.45 seconds. Ordinary clicks, right-clicks,
 hovering, and keyboard events are ignored.
 
-`ContextualSettingsBindingOptions` can omit tooltip work, append the standard
-hint to a feature tooltip, or register the hint alone. Consumers remain
-responsible only for deciding which feature maps to which setting. Spine owns
-composition and registration so a feature does not create a second tooltip.
+`ContextualSettingsBindingOptions` can omit tooltip work or let Spine register
+an existing feature tooltip once. Spine does not append or register an
+“Alt-click” hint over gameplay UI. The convention is documented in mod
+documentation instead of repeated across world labels, overlays, and
+controls. The older hint fields remain binary-compatible but are presentation
+no-ops in capability version 1.1.
+
+The shared settings drawer adapts its toolbar to the number of configurable
+rows. Below five settings it shows only section headers and rows. From five
+through ten it adds search but keeps all settings in one unfiltered view. Above
+ten it may show search, consumer-provided filters, and simple/advanced views.
+Headers and spacers do not count toward those thresholds; consumers do not
+implement this policy themselves.
 
 The deferred-open Harmony owner is
 `CoolNether123.Spine.ContextualSettings`. It is installed when the first lease

@@ -206,26 +206,18 @@ namespace Spine.UI.SettingsFramework
                 return;
             }
 
-            string targetId = plan.TargetId;
-            SettingDefinition target = _hierarchy.GetById(targetId);
-            var filter = new SettingsFilterDefinition
-            {
-                Id = "spine.context." + targetId,
-                Label = GetLabel?.Invoke(target) ?? target.Label ?? "Context",
-                Tooltip = GetTooltip?.Invoke(target) ?? target.Tooltip,
-                IncludeChildrenOfMatches = plan.IncludeChildren,
-                Predicate = (definition, _) =>
-                    definition != null &&
-                    string.Equals(
-                        definition.Id,
-                        targetId,
-                        StringComparison.OrdinalIgnoreCase)
-            };
-
-            ApplyContextFilter(filter, targetId);
-            _pendingContextViewMode = plan.UseSimpleView
-                ? SettingsViewMode.Simple
-                : SettingsViewMode.Advanced;
+            ClearActiveFilter();
+            ClearSearch();
+            _transferMode = TransferMode.None;
+            _pendingFocusSettingId = plan.TargetId;
+            FocusSetting(plan.TargetId);
+            _pendingContextViewMode =
+                !SettingsPresentationPolicy.ShowViewModes(
+                    _hierarchy.SettingCount)
+                    ? SettingsViewMode.All
+                    : plan.UseSimpleView
+                        ? SettingsViewMode.Simple
+                        : SettingsViewMode.Advanced;
         }
 
         /// <summary>
@@ -248,11 +240,26 @@ namespace Spine.UI.SettingsFramework
                 _pendingContextViewMode = null;
             }
 
-            const float headerHeight = 30f;
-            Rect headerRect = new Rect(rect.x, rect.y, rect.width, headerHeight);
-            DrawHeader(headerRect, ref viewMode);
+            bool drawHeader = ShouldDrawHeader();
+            float listStartY = rect.y;
+            if (drawHeader)
+            {
+                const float headerHeight = 30f;
+                Rect headerRect = new Rect(
+                    rect.x,
+                    rect.y,
+                    rect.width,
+                    headerHeight);
+                DrawHeader(headerRect, ref viewMode);
+                listStartY = headerRect.yMax + 10f;
+            }
+            else
+            {
+                viewMode = SettingsViewMode.All;
+                ClearActiveFilter();
+                ClearSearch();
+            }
 
-            float listStartY = headerRect.yMax + 10f;
             bool drawFooter = ImportExportActions?.HasAnyAction ?? false;
             float footerSpace = drawFooter ? FooterHeight + 8f : 0f;
             Rect listRect = new Rect(rect.x, listStartY, rect.width, rect.height - (listStartY - rect.y) - footerSpace);
@@ -267,23 +274,73 @@ namespace Spine.UI.SettingsFramework
 
         private void DrawHeader(Rect rect, ref SettingsViewMode viewMode)
         {
-            bool hasFilters = Filters != null && Filters.Count > 0;
-            float toggleWidth = 200f;
+            bool showSearch = SettingsPresentationPolicy.ShowSearch(
+                _hierarchy.SettingCount);
+            bool showViewModes = SettingsPresentationPolicy.ShowViewModes(
+                _hierarchy.SettingCount);
+            bool showFilters = SettingsPresentationPolicy.ShowFilters(
+                _hierarchy.SettingCount);
+            bool hasFilters =
+                showFilters &&
+                Filters != null &&
+                Filters.Count > 0;
+            if (!showFilters)
+            {
+                ClearActiveFilter();
+            }
+
+            float toggleWidth = showViewModes ? 200f : 0f;
             float filterWidth = hasFilters ? 150f : 0f;
-            float searchWidth = Mathf.Max(120f, rect.width - toggleWidth - filterWidth - (hasFilters ? ToolbarGap * 2f : ToolbarGap));
+            int visibleControlCount =
+                (showSearch ? 1 : 0) +
+                (hasFilters ? 1 : 0) +
+                (showViewModes ? 1 : 0);
+            float gaps = Mathf.Max(0, visibleControlCount - 1) * ToolbarGap;
+            float searchWidth = showSearch
+                ? Mathf.Max(120f, rect.width - toggleWidth - filterWidth - gaps)
+                : 0f;
             Rect searchRect = new Rect(rect.x, rect.y, searchWidth, rect.height);
-            Rect filterRect = new Rect(searchRect.xMax + ToolbarGap, rect.y, filterWidth, rect.height);
+            float filterX = showSearch
+                ? searchRect.xMax + ToolbarGap
+                : rect.x;
+            Rect filterRect = new Rect(filterX, rect.y, filterWidth, rect.height);
             Rect toggleRect = new Rect(rect.xMax - 200f, rect.y, 200f, rect.height);
 
-            _searchWidget.OnGUI(searchRect, () => { });
-            _searchQuery = _searchWidget.filter.Text ?? string.Empty;
+            if (showSearch)
+            {
+                _searchWidget.OnGUI(searchRect, () => { });
+                _searchQuery = _searchWidget.filter.Text ?? string.Empty;
+            }
+            else
+            {
+                ClearSearch();
+            }
 
             if (hasFilters)
             {
                 DrawFilterButton(filterRect);
             }
 
-            DrawViewToggle(toggleRect, ref viewMode);
+            if (showViewModes)
+            {
+                DrawViewToggle(toggleRect, ref viewMode);
+            }
+            else
+            {
+                viewMode = SettingsViewMode.All;
+            }
+        }
+
+        private bool ShouldDrawHeader()
+        {
+            return SettingsPresentationPolicy.ShowSearch(
+                    _hierarchy.SettingCount) ||
+                SettingsPresentationPolicy.ShowFilters(
+                    _hierarchy.SettingCount) &&
+                Filters != null &&
+                Filters.Count > 0 ||
+                SettingsPresentationPolicy.ShowViewModes(
+                    _hierarchy.SettingCount);
         }
 
         private void DrawFilterButton(Rect rect)
@@ -1183,6 +1240,11 @@ namespace Spine.UI.SettingsFramework
 
         private void ClearActiveFilter()
         {
+            if (_activeFilter == null)
+            {
+                return;
+            }
+
             ApplyFilter(null);
         }
 
