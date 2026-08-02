@@ -15,7 +15,7 @@ namespace Spine.UI.ContextualSettings
         internal const string ApiId = "CoolNether123.Spine.ContextualSettings";
         internal const string HarmonyId = ApiId;
         internal static readonly SemanticVersion ApiVersion =
-            new SemanticVersion(1, 1, 0);
+            new SemanticVersion(1, 0, 0);
         private static readonly object Sync = new object();
         private static readonly FieldInfo DialogModField = AccessTools.Field(
             typeof(Dialog_ModSettings),

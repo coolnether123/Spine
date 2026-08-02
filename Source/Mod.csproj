@@ -1,43 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <RwtIsRimWorldMod>true</RwtIsRimWorldMod>
     <TargetFramework>net472</TargetFramework>
-    <LangVersion>latest</LangVersion>
     <AssemblyName>Spine</AssemblyName>
     <RootNamespace>Spine</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Deterministic>true</Deterministic>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\1.6\Assemblies\</OutputPath>
+    <RwtUseHarmony>true</RwtUseHarmony>
+    <RwtUseUnityImGui>true</RwtUseUnityImGui>
+    <RwtUseUnityInputLegacy>true</RwtUseUnityInputLegacy>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>$(RimWorldManagedDir)\Assembly-CSharp.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(RimWorldManagedDir)\UnityEngine.CoreModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>$(RimWorldManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>$(RimWorldManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(RimWorldManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>$(RwtDependencyHarmony)</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <Compile Remove="Spine\harmony\HarmonyCompat.cs" />
+    <Compile Remove="Spine\harmony\Transpilers\**\*.cs" />
   </ItemGroup>
-  <Target Name="RequireResolvedDependencies" BeforeTargets="ResolveReferences">
-    <Error
-      Condition="'$(RwtDependencyHarmony)' == '' or !Exists('$(RwtDependencyHarmony)')"
-      Text="RwtDependencyHarmony must resolve to the centralized Harmony compile assembly." />
-  </Target>
 </Project>

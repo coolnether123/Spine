@@ -1,7 +1,7 @@
 # Contextual settings capability
 
-Spine runtime 1.3 exposes `SpineApi.ContextualSettings` with capability ID
-`CoolNether123.Spine.ContextualSettings` version 1.1. Consumers negotiate
+Spine runtime 1.0 exposes `SpineApi.ContextualSettings` with capability ID
+`CoolNether123.Spine.ContextualSettings` version 1.0. Consumers negotiate
 `SpineCapability.ContextualSettings`, acquire one lease for the mod lifetime,
 and call `Bind` where a visible immediate-mode rectangle is known.
 
@@ -31,7 +31,7 @@ an existing feature tooltip once. Spine does not append or register an
 “Alt-click” hint over gameplay UI. The convention is documented in mod
 documentation instead of repeated across world labels, overlays, and
 controls. The older hint fields remain binary-compatible but are presentation
-no-ops in capability version 1.1.
+no-ops in the current 1.0 capability.
 
 The shared settings drawer adapts its toolbar to the number of configurable
 rows. Below five settings it shows only section headers and rows. From five
@@ -45,7 +45,7 @@ The deferred-open Harmony owner is
 is acquired and removed with the final lease. Registration and opening failures
 are isolated; no scanning, polling, or gameplay work occurs with no consumer.
 
-From Spine runtime 1.2 onward, ordinary gameplay mods should acquire their
+Ordinary gameplay mods should acquire their
 settings page through `SpineApi.Settings`. The returned `IModSettingsPage`
 exposes the already-associated contextual-settings lease, so consumers do not
 repeat drawer construction or a second acquisition. Direct

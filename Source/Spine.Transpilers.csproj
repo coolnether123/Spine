@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RwtIsRimWorldMod>true</RwtIsRimWorldMod>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>Spine.Transpilers</AssemblyName>
+    <RootNamespace>Spine</RootNamespace>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <OutputPath>..\Developer\Spine.Transpilers\1.6\Assemblies\</OutputPath>
+    <RwtUseHarmony>true</RwtUseHarmony>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Spine\harmony\HarmonyCompat.cs" />
+    <Compile Include="Spine\harmony\HarmonyLog.cs" />
+    <Compile Include="Spine\harmony\Transpilers\**\*.cs" />
+  </ItemGroup>
+</Project>

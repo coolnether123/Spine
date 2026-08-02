@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Spine Transpilers</name>
+  <author>CoolNether123</author>
+  <packageId>CoolNether123.Spine.Transpilers</packageId>
+  <supportedVersions><li>1.6</li></supportedVersions>
+  <modDependencies>
+    <li><packageId>brrainz.harmony</packageId><displayName>Harmony</displayName></li>
+    <li><packageId>CoolNether123.Spine</packageId><displayName>Spine</displayName></li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+    <li>CoolNether123.Spine</li>
+  </loadAfter>
+  <description>Optional fluent transpiler companion for Spine consumers that patch IL. Ordinary gameplay mods do not need this package.</description>
+</ModMetaData>

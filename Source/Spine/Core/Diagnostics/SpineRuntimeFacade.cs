@@ -10,15 +10,15 @@ namespace Spine.Api
         private static readonly SpineApiDescriptor CurrentDescriptor =
             new SpineApiDescriptor(
                 "CoolNether123.Spine",
-                new SemanticVersion(1, 3, 0),
-                SpineCapability.Revisions |
-                SpineCapability.DirtyRegions |
+                new SemanticVersion(1, 0, 0),
                 SpineCapability.BoundedCaches |
-                SpineCapability.RenderPipelines |
-                SpineCapability.Diagnostics |
                 SpineCapability.Settings |
                 SpineCapability.HarmonyPatching |
-                SpineCapability.FluentTranspilers |
+                (Type.GetType(
+                    "Spine.Harmony.FluentTranspiler, Spine.Transpilers",
+                    throwOnError: false) == null
+                    ? SpineCapability.None
+                    : SpineCapability.FluentTranspilers) |
                 SpineCapability.TooltipSizing |
                 SpineCapability.ContextualSettings |
                 SpineCapability.ModSettingsPages);
@@ -32,16 +32,17 @@ namespace Spine.Api
         public SpineCompatibilityResult Check(
             SpineRequirement requirement)
         {
+            SpineApiDescriptor descriptor = CurrentDescriptor;
             var missing = requirement.RequiredCapabilities &
-                ~CurrentDescriptor.Capabilities;
-            if (CurrentDescriptor.Version < requirement.MinimumVersion)
+                ~descriptor.Capabilities;
+            if (descriptor.Version < requirement.MinimumVersion)
             {
                 return new SpineCompatibilityResult(
                     false,
                     missing,
                     requirement.ConsumerId + " requires Spine API " +
                     requirement.MinimumVersion + " or newer; loaded " +
-                    CurrentDescriptor.Version + ".");
+                    descriptor.Version + ".");
             }
 
             if (missing != SpineCapability.None)
@@ -52,15 +53,15 @@ namespace Spine.Api
                     requirement.ConsumerId +
                     " requires unavailable Spine capabilities: " +
                     missing + ". Loaded Spine " +
-                    CurrentDescriptor.Version + " advertises " +
-                    CurrentDescriptor.Capabilities + ".");
+                    descriptor.Version + " advertises " +
+                    descriptor.Capabilities + ".");
             }
 
             return new SpineCompatibilityResult(
                 true,
                 SpineCapability.None,
                 requirement.ConsumerId + " requirements are satisfied by " +
-                "Spine " + CurrentDescriptor.Version + ".");
+                "Spine " + descriptor.Version + ".");
         }
 
         public void Require(SpineRequirement requirement)

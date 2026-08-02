@@ -5,28 +5,30 @@
     <AssemblyName>Spine.Tests</AssemblyName>
     <RootNamespace>Spine.Tests</RootNamespace>
     <Deterministic>true</Deterministic>
+    <RwtTestSupportProject Condition="'$(RwtTestSupportProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\Worktrees\RimWorld-Tooling\phase-a\test-support\RimWorld.ModTestSupport\RimWorld.ModTestSupport.csproj</RwtTestSupportProject>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="TranspilerFixtures\**\*.cs" />
-    <Compile Include="..\Source\Spine\Core\Revisions\RevisionSource.cs"
-             Link="Foundation\RevisionSource.cs" />
-    <Compile Include="..\Source\Spine\Core\DirtyTracking\SparseDirtySets.cs"
-             Link="Foundation\SparseDirtySets.cs" />
     <Compile Include="..\Source\Spine\Core\Caching\BoundedLruCache.cs"
              Link="Foundation\BoundedLruCache.cs" />
-    <Compile Include="..\Source\Spine\Core\Collections\ImmutableSnapshot.cs"
-             Link="Foundation\ImmutableSnapshot.cs" />
-    <Compile Include="..\Source\Spine\Core\Diagnostics\RenderDiagnostics.cs"
-             Link="Foundation\RenderDiagnostics.cs" />
     <Compile Include="..\Source\Spine\Core\Diagnostics\ApiDescriptors.cs"
              Link="Foundation\ApiDescriptors.cs" />
     <Compile Include="..\Source\Spine\Core\Diagnostics\SpineRuntimeFacade.cs"
              Link="Foundation\SpineRuntimeFacade.cs" />
-    <Compile Include="..\Source\Spine\Core\Rendering\RenderPipeline.cs"
-             Link="Foundation\RenderPipeline.cs" />
+    <Compile Include="..\Source\Spine\harmony\HarmonyPatchOperationKeys.cs"
+             Link="Harmony\HarmonyPatchOperationKeys.cs" />
     <Compile Include="..\Source\Spine\UI\ContextualSettings\ContextualSettingsRouterCore.cs"
              Link="ContextualSettings\ContextualSettingsRouterCore.cs" />
     <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingsPresentationPolicy.cs"
              Link="SettingsFramework\SettingsPresentationPolicy.cs" />
+    <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingType.cs"
+             Link="SettingsFramework\SettingType.cs" />
+    <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingDefinition.cs"
+             Link="SettingsFramework\SettingDefinition.cs" />
+    <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingDefinitions.cs"
+             Link="SettingsFramework\SettingDefinitions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(RwtTestSupportProject)" />
   </ItemGroup>
 </Project>

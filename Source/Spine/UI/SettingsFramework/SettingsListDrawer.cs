@@ -15,11 +15,8 @@ namespace Spine.UI.SettingsFramework
     {
         private const float ResetIconSlotWidth = 26f;
         private const float ResetButtonSize = 20f;
-        private const float FooterHeight = 34f;
         private const float ToolbarGap = 8f;
         private const float FocusHighlightSeconds = 1.45f;
-        private const float SuppressionNoticeHeight = 17f;
-        private const float SuppressionLinkGap = 6f;
         private const float SearchResultDoubleClickMaxSeconds = 0.25f;
         private const float SearchResultDoubleClickMoveTolerance = 5f;
 
@@ -35,7 +32,6 @@ namespace Spine.UI.SettingsFramework
         private string _lastSearchClickSettingId;
         private float _lastSearchClickTime = -1f;
         private Vector2 _lastSearchClickPosition;
-        private TransferMode _transferMode = TransferMode.None;
         private readonly HashSet<string> _forceVisibleDisabledAncestorIds =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -114,21 +110,6 @@ namespace Spine.UI.SettingsFramework
         public Color FocusHighlightColor { get; set; } = new Color(1f, 0.78f, 0.18f, 1f);
 
         /// <summary>
-        /// Color of the explanation drawn under a suppressed setting.
-        /// </summary>
-        public Color SuppressionNoticeColor { get; set; } = new Color(0.72f, 0.66f, 0.44f, 1f);
-
-        /// <summary>
-        /// Color of the link that jumps to the setting responsible for a suppression.
-        /// </summary>
-        public Color SuppressionLinkColor { get; set; } = new Color(0.62f, 0.76f, 1f, 1f);
-
-        /// <summary>
-        /// Tooltip shown when hovering a suppression link.
-        /// </summary>
-        public string SuppressionLinkTooltip { get; set; } = "Go to the setting that is overriding this one.";
-
-        /// <summary>
         /// Optional filters shown by the toolbar filter button.
         /// </summary>
         public IReadOnlyList<SettingsFilterDefinition> Filters { get; set; } = Array.Empty<SettingsFilterDefinition>();
@@ -142,11 +123,6 @@ namespace Spine.UI.SettingsFramework
         /// Menu label that clears the active filter.
         /// </summary>
         public string AllSettingsFilterLabel { get; set; } = "All settings";
-
-        /// <summary>
-        /// Optional import/export footer actions.
-        /// </summary>
-        public SettingsImportExportActions ImportExportActions { get; set; }
 
         /// <summary>
         /// Optional callback invoked when a row's tooltip is actually hovered.
@@ -172,7 +148,6 @@ namespace Spine.UI.SettingsFramework
             _scrollPosition = Vector2.zero;
             FocusSetting(targetSettingId);
             _pendingFocusSettingId = targetSettingId;
-            _transferMode = TransferMode.None;
             ClearSearch();
         }
 
@@ -208,12 +183,12 @@ namespace Spine.UI.SettingsFramework
 
             ClearActiveFilter();
             ClearSearch();
-            _transferMode = TransferMode.None;
             _pendingFocusSettingId = plan.TargetId;
             FocusSetting(plan.TargetId);
             _pendingContextViewMode =
                 !SettingsPresentationPolicy.ShowViewModes(
-                    _hierarchy.SettingCount)
+                    _hierarchy.SettingCount,
+                    _hierarchy.AdvancedOnlySettingCount)
                     ? SettingsViewMode.All
                     : plan.UseSimpleView
                         ? SettingsViewMode.Simple
@@ -260,16 +235,8 @@ namespace Spine.UI.SettingsFramework
                 ClearSearch();
             }
 
-            bool drawFooter = ImportExportActions?.HasAnyAction ?? false;
-            float footerSpace = drawFooter ? FooterHeight + 8f : 0f;
-            Rect listRect = new Rect(rect.x, listStartY, rect.width, rect.height - (listStartY - rect.y) - footerSpace);
+            Rect listRect = new Rect(rect.x, listStartY, rect.width, rect.height - (listStartY - rect.y));
             DrawSettingsList(listRect, settingsObject, ref viewMode, onSettingsChanged);
-
-            if (drawFooter)
-            {
-                Rect footerRect = new Rect(rect.x, rect.yMax - FooterHeight, rect.width, FooterHeight);
-                DrawImportExportFooter(footerRect);
-            }
         }
 
         private void DrawHeader(Rect rect, ref SettingsViewMode viewMode)
@@ -277,7 +244,8 @@ namespace Spine.UI.SettingsFramework
             bool showSearch = SettingsPresentationPolicy.ShowSearch(
                 _hierarchy.SettingCount);
             bool showViewModes = SettingsPresentationPolicy.ShowViewModes(
-                _hierarchy.SettingCount);
+                _hierarchy.SettingCount,
+                _hierarchy.AdvancedOnlySettingCount);
             bool showFilters = SettingsPresentationPolicy.ShowFilters(
                 _hierarchy.SettingCount);
             bool hasFilters =
@@ -340,7 +308,8 @@ namespace Spine.UI.SettingsFramework
                 Filters != null &&
                 Filters.Count > 0 ||
                 SettingsPresentationPolicy.ShowViewModes(
-                    _hierarchy.SettingCount);
+                    _hierarchy.SettingCount,
+                    _hierarchy.AdvancedOnlySettingCount);
         }
 
         private void DrawFilterButton(Rect rect)
@@ -536,9 +505,7 @@ namespace Spine.UI.SettingsFramework
             foreach (var def in visibleSettings)
             {
                 int depth = _hierarchy.GetDepth(def);
-                SettingSuppression suppression = def.GetActiveSuppression(settingsObject);
-                bool disabledByAncestor = _hierarchy.IsDisabledByAncestor(def, settingsObject) ||
-                    HasSuppressedAncestor(def, settingsObject);
+                bool disabledByAncestor = _hierarchy.IsDisabledByAncestor(def, settingsObject);
                 bool allowFocusedDisabledInteraction =
                     disabledByAncestor && IsFocusedForcedVisibleSetting(def);
 
@@ -555,7 +522,6 @@ namespace Spine.UI.SettingsFramework
                     def,
                     settingsObject,
                     disabledByAncestor && !allowFocusedDisabledInteraction,
-                    suppression,
                     depth,
                     onSettingsChanged);
                 curY += rowHeight;
@@ -577,7 +543,6 @@ namespace Spine.UI.SettingsFramework
             SettingDefinition def,
             object settingsObject,
             bool isDisabledByParent,
-            SettingSuppression suppression,
             int depth,
             Action onSettingsChanged)
         {
@@ -586,21 +551,14 @@ namespace Spine.UI.SettingsFramework
                 Widgets.DrawHighlight(rect);
             }
 
-            string suppressionReason = suppression?.ResolveReason(settingsObject);
-            bool hasNotice = !string.IsNullOrEmpty(suppressionReason);
-
-            // The control keeps its normal height; the notice, when present, occupies the extra
-            // strip this row was measured with.
-            Rect controlRow = hasNotice
-                ? new Rect(rect.x, rect.y, rect.width, rect.height - SuppressionNoticeHeight)
-                : rect;
+            Rect controlRow = rect;
 
             float indent = depth * IndentPerLevel;
             Rect contentRect = new Rect(controlRow.x + indent, controlRow.y, controlRow.width - indent, controlRow.height);
 
-            bool disabled = isDisabledByParent || suppression != null;
+            bool disabled = isDisabledByParent;
             string label = GetLabel?.Invoke(def) ?? def.Label ?? def.Id;
-            string tooltip = BuildTooltip(def, suppressionReason);
+            string tooltip = BuildTooltip(def);
             if (def.Type == SettingType.Color)
             {
                 tooltip = AppendTooltip(tooltip, ColorPreviewTooltip);
@@ -643,52 +601,15 @@ namespace Spine.UI.SettingsFramework
                     if (field != null && field.FieldType == typeof(bool))
                     {
                         bool boolValue = (bool)field.GetValue(settingsObject);
-                        bool changed = def.EmphasizeAsHeader
-                            ? SettingWidgets.DrawHeaderBool(contentRect, label, ref boolValue, def.HeaderColor, tooltip, disabled)
-                            : SettingWidgets.DrawBool(contentRect, label, ref boolValue, tooltip, disabled);
+                        bool changed = SettingWidgets.DrawBool(
+                            contentRect,
+                            label,
+                            ref boolValue,
+                            tooltip,
+                            disabled);
                         if (changed)
                         {
                             field.SetValue(settingsObject, boolValue);
-                            HandleSettingChanged(def, settingsObject, onSettingsChanged);
-                        }
-                    }
-                    break;
-                case SettingType.Int:
-                    if (field != null && field.FieldType == typeof(int))
-                    {
-                        int intValue = (int)field.GetValue(settingsObject);
-                        int min = def.MinValue.HasValue ? Mathf.RoundToInt(def.MinValue.Value) : int.MinValue;
-                        int max = def.MaxValue.HasValue ? Mathf.RoundToInt(def.MaxValue.Value) : int.MaxValue;
-                        if (SettingWidgets.DrawInt(contentRect, label, ref intValue, min, max, tooltip, disabled))
-                        {
-                            field.SetValue(settingsObject, intValue);
-                            HandleSettingChanged(def, settingsObject, onSettingsChanged);
-                        }
-                    }
-                    break;
-                case SettingType.NumericInt:
-                    if (field != null && field.FieldType == typeof(int))
-                    {
-                        int intValue = (int)field.GetValue(settingsObject);
-                        int min = def.MinValue.HasValue ? Mathf.RoundToInt(def.MinValue.Value) : int.MinValue;
-                        int max = def.MaxValue.HasValue ? Mathf.RoundToInt(def.MaxValue.Value) : int.MaxValue;
-                        if (SettingWidgets.DrawNumericInt(contentRect, label, ref intValue, min, max, tooltip, disabled))
-                        {
-                            field.SetValue(settingsObject, intValue);
-                            HandleSettingChanged(def, settingsObject, onSettingsChanged);
-                        }
-                    }
-                    break;
-                case SettingType.Float:
-                    if (field != null && (field.FieldType == typeof(float) || field.FieldType == typeof(double)))
-                    {
-                        float floatValue = Convert.ToSingle(field.GetValue(settingsObject));
-                        float min = def.MinValue ?? 0f;
-                        float max = def.MaxValue ?? 1f;
-                        if (SettingWidgets.DrawFloat(contentRect, label, ref floatValue, min, max,
-                                def.MinLabel, def.MaxLabel, def.ValueFormat, tooltip, disabled))
-                        {
-                            field.SetValue(settingsObject, floatValue);
                             HandleSettingChanged(def, settingsObject, onSettingsChanged);
                         }
                     }
@@ -754,14 +675,8 @@ namespace Spine.UI.SettingsFramework
                         GUI.color = Color.gray;
                     }
 
-                    SettingWidgets.DrawHeader(contentRect, label, def.HeaderColor);
+                    SettingWidgets.DrawHeader(contentRect, label);
                     GUI.color = previousColor;
-                    break;
-                case SettingType.Spacer:
-                    SettingWidgets.DrawSpacer(contentRect);
-                    break;
-                case SettingType.DropdownListAdder:
-                    SettingWidgets.DrawDropdownListAdder(contentRect, label, def.DropdownOptionsProvider, def.OnOptionAdded, tooltip, disabled);
                     break;
                 case SettingType.Custom:
                     if (def.CustomDrawer != null &&
@@ -770,16 +685,6 @@ namespace Spine.UI.SettingsFramework
                         HandleSettingChanged(def, settingsObject, onSettingsChanged);
                     }
                     break;
-            }
-
-            if (hasNotice)
-            {
-                Rect noticeRect = new Rect(
-                    controlRow.x + indent,
-                    controlRow.yMax,
-                    Mathf.Max(0f, rect.width - indent),
-                    SuppressionNoticeHeight);
-                DrawSuppressionNotice(noticeRect, suppression, suppressionReason, settingsObject);
             }
 
             if (!string.IsNullOrEmpty(tooltip) && !DescribedFloatMenu.AnyOpen)
@@ -804,27 +709,9 @@ namespace Spine.UI.SettingsFramework
                 : tooltip + "\n\n" + addition;
         }
 
-        /// <summary>
-        /// True when any ancestor is itself suppressed, which makes this setting inert as well.
-        /// </summary>
-        private bool HasSuppressedAncestor(SettingDefinition setting, object settingsObject)
-        {
-            foreach (SettingDefinition ancestor in _hierarchy.GetAncestors(setting))
-            {
-                if (ancestor.GetActiveSuppression(settingsObject) != null)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         private float MeasureRowHeight(SettingDefinition def, object settingsObject)
         {
-            SettingSuppression suppression = def?.GetActiveSuppression(settingsObject);
-            bool hasNotice = suppression != null && !string.IsNullOrEmpty(suppression.ResolveReason(settingsObject));
-            return hasNotice ? RowHeight + SuppressionNoticeHeight : RowHeight;
+            return RowHeight;
         }
 
         private float MeasureTotalHeight(List<SettingDefinition> settings, object settingsObject)
@@ -838,98 +725,9 @@ namespace Spine.UI.SettingsFramework
             return total;
         }
 
-        /// <summary>
-        /// Draws the greyed explanation under a suppressed row, plus a link to the setting responsible.
-        /// </summary>
-        private void DrawSuppressionNotice(
-            Rect rect,
-            SettingSuppression suppression,
-            string reason,
-            object settingsObject)
-        {
-            GameFont oldFont = Text.Font;
-            Color oldColor = GUI.color;
-            bool oldWordWrap = Text.WordWrap;
-            Text.Font = GameFont.Tiny;
-            Text.WordWrap = false;
-
-            try
-            {
-                float reasonWidth = Mathf.Min(Text.CalcSize(reason).x, rect.width);
-                GUI.color = SuppressionNoticeColor;
-                Widgets.Label(new Rect(rect.x, rect.y, reasonWidth, rect.height), reason);
-
-                SettingDefinition suppressor = _hierarchy.GetById(suppression.SuppressorSettingId);
-                if (suppressor == null)
-                {
-                    return;
-                }
-
-                string linkText = suppression.LinkLabel
-                    ?? GetLabel?.Invoke(suppressor)
-                    ?? suppressor.Label
-                    ?? suppressor.Id;
-                float linkWidth = Text.CalcSize(linkText).x;
-                float linkX = rect.x + reasonWidth + SuppressionLinkGap;
-                if (linkX + linkWidth > rect.xMax)
-                {
-                    return;
-                }
-
-                Rect linkRect = new Rect(linkX, rect.y, linkWidth, rect.height);
-                bool hovered = Mouse.IsOver(linkRect);
-                GUI.color = hovered
-                    ? Color.white
-                    : SuppressionLinkColor;
-                Widgets.Label(linkRect, linkText);
-                Widgets.DrawLineHorizontal(linkRect.x, linkRect.yMax - 3f, linkWidth);
-                TooltipHandler.TipRegion(linkRect, SuppressionLinkTooltip);
-
-                if (Widgets.ButtonInvisible(linkRect))
-                {
-                    JumpToSuppressor(suppressor, settingsObject);
-                    Event.current?.Use();
-                }
-            }
-            finally
-            {
-                Text.Font = oldFont;
-                Text.WordWrap = oldWordWrap;
-                GUI.color = oldColor;
-            }
-        }
-
-        /// <summary>
-        /// Focuses the setting responsible for a suppression, lifting whatever search or filter
-        /// would otherwise hide it. The scroll happens on the next draw via <see cref="_pendingFocusSettingId"/>.
-        /// </summary>
-        private void JumpToSuppressor(SettingDefinition suppressor, object settingsObject)
-        {
-            ClearSearch();
-
-            if (_activeFilter != null && !MatchesFilter(suppressor, settingsObject, _activeFilter))
-            {
-                ClearActiveFilter();
-            }
-
-            RevealDisabledAncestorChain(suppressor.Id);
-            _pendingFocusSettingId = suppressor.Id;
-            FocusSetting(suppressor.Id);
-        }
-
-        private string BuildTooltip(SettingDefinition def, string disabledReason)
+        private string BuildTooltip(SettingDefinition def)
         {
             string tooltip = GetTooltip?.Invoke(def) ?? def.Tooltip ?? string.Empty;
-
-            if (!string.IsNullOrEmpty(disabledReason))
-            {
-                if (!string.IsNullOrEmpty(tooltip))
-                {
-                    tooltip += "\n\n";
-                }
-
-                tooltip += disabledReason;
-            }
 
             // Append parent chain info for children
             if (!string.IsNullOrEmpty(def.ParentId))
@@ -1235,7 +1033,6 @@ namespace Spine.UI.SettingsFramework
         {
             _activeFilter = filter;
             _scrollPosition = Vector2.zero;
-            _transferMode = TransferMode.None;
         }
 
         private void ClearActiveFilter()
@@ -1246,74 +1043,6 @@ namespace Spine.UI.SettingsFramework
             }
 
             ApplyFilter(null);
-        }
-
-        private void DrawImportExportFooter(Rect rect)
-        {
-            Widgets.DrawLineHorizontal(rect.x, rect.y, rect.width);
-            Rect contentRect = rect.ContractedBy(2f);
-            contentRect.y += 4f;
-            contentRect.height -= 4f;
-
-            if (_transferMode == TransferMode.None)
-            {
-                float buttonWidth = 110f;
-                Rect exportRect = new Rect(contentRect.x, contentRect.y, buttonWidth, contentRect.height);
-                Rect importRect = new Rect(exportRect.xMax + 6f, contentRect.y, buttonWidth, contentRect.height);
-
-                if (ImportExportActions.ExportToFile != null || ImportExportActions.ExportToClipboard != null)
-                {
-                    if (Widgets.ButtonText(exportRect, ImportExportActions.ExportLabel))
-                    {
-                        _transferMode = TransferMode.Export;
-                    }
-                }
-
-                if (ImportExportActions.ImportFromFile != null || ImportExportActions.ImportFromClipboard != null)
-                {
-                    if (Widgets.ButtonText(importRect, ImportExportActions.ImportLabel))
-                    {
-                        _transferMode = TransferMode.Import;
-                    }
-                }
-
-                return;
-            }
-
-            string prefix = _transferMode == TransferMode.Export
-                ? ImportExportActions.ExportLabel
-                : ImportExportActions.ImportLabel;
-            Rect labelRect = new Rect(contentRect.x, contentRect.y + 5f, 80f, contentRect.height);
-            Widgets.Label(labelRect, prefix + ":");
-
-            float optionWidth = 110f;
-            Rect fileRect = new Rect(labelRect.xMax + 4f, contentRect.y, optionWidth, contentRect.height);
-            Rect clipboardRect = new Rect(fileRect.xMax + 6f, contentRect.y, optionWidth, contentRect.height);
-            Rect cancelRect = new Rect(clipboardRect.xMax + 6f, contentRect.y, optionWidth, contentRect.height);
-
-            Action fileAction = _transferMode == TransferMode.Export
-                ? ImportExportActions.ExportToFile
-                : ImportExportActions.ImportFromFile;
-            Action clipboardAction = _transferMode == TransferMode.Export
-                ? ImportExportActions.ExportToClipboard
-                : ImportExportActions.ImportFromClipboard;
-
-            if (fileAction != null && Widgets.ButtonText(fileRect, ImportExportActions.FileLabel))
-            {
-                _transferMode = TransferMode.None;
-                fileAction();
-            }
-
-            if (clipboardAction != null && Widgets.ButtonText(clipboardRect, ImportExportActions.ClipboardLabel))
-            {
-                _transferMode = TransferMode.None;
-                clipboardAction();
-            }
-
-            if (Widgets.ButtonText(cancelRect, ImportExportActions.CancelLabel))
-            {
-                _transferMode = TransferMode.None;
-            }
         }
 
         private bool TryHandleSearchResultDoubleClick(
@@ -1605,11 +1334,6 @@ namespace Spine.UI.SettingsFramework
                 return false;
             }
 
-            if (def.Type == SettingType.Custom)
-            {
-                return def.CustomReset != null && def.CustomHasNonDefaultValue != null;
-            }
-
             if (field == null || def.DefaultValue == null)
             {
                 return false;
@@ -1618,9 +1342,6 @@ namespace Spine.UI.SettingsFramework
             switch (def.Type)
             {
                 case SettingType.Bool:
-                case SettingType.Int:
-                case SettingType.NumericInt:
-                case SettingType.Float:
                 case SettingType.Color:
                 case SettingType.Enum:
                     return true;
@@ -1634,11 +1355,6 @@ namespace Spine.UI.SettingsFramework
             if (settingsObject == null || def == null)
             {
                 return false;
-            }
-
-            if (def.Type == SettingType.Custom)
-            {
-                return def.CustomHasNonDefaultValue?.Invoke(settingsObject) ?? false;
             }
 
             if (field == null)
@@ -1683,17 +1399,6 @@ namespace Spine.UI.SettingsFramework
             if (settingsObject == null || def == null)
             {
                 return false;
-            }
-
-            if (def.Type == SettingType.Custom)
-            {
-                if (def.CustomReset == null)
-                {
-                    return false;
-                }
-
-                def.CustomReset(settingsObject);
-                return true;
             }
 
             if (field == null)
@@ -1769,12 +1474,6 @@ namespace Spine.UI.SettingsFramework
             return Equals(a, b);
         }
 
-        private enum TransferMode
-        {
-            None,
-            Export,
-            Import
-        }
 
         private sealed class EmptyStateAction
         {

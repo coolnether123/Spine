@@ -16,6 +16,7 @@ namespace Spine.UI.SettingsFramework
         private readonly List<SettingDefinition> _rootSettings;
 
         public int SettingCount { get; }
+        public int AdvancedOnlySettingCount { get; }
 
         /// <summary>
         /// Creates a new hierarchy from a flat list of definitions.
@@ -37,8 +38,11 @@ namespace Spine.UI.SettingsFramework
             }
 
             SettingCount = _byId.Values.Count(definition =>
+                definition.Type != SettingType.Header);
+            AdvancedOnlySettingCount = _byId.Values.Count(definition =>
                 definition.Type != SettingType.Header &&
-                definition.Type != SettingType.Spacer);
+                !definition.ShowInSimpleView &&
+                definition.ShowInAdvancedView);
 
             foreach (var def in _byId.Values)
             {

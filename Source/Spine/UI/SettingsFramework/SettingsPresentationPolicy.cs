@@ -4,6 +4,7 @@ namespace Spine.UI.SettingsFramework
     {
         internal const int MinimumSettingsForSearch = 5;
         internal const int MinimumSettingsForFilters = 11;
+        internal const int MinimumAdditionalAdvancedSettings = 4;
 
         internal static bool ShowSearch(int settingCount)
         {
@@ -15,9 +16,13 @@ namespace Spine.UI.SettingsFramework
             return settingCount >= MinimumSettingsForFilters;
         }
 
-        internal static bool ShowViewModes(int settingCount)
+        internal static bool ShowViewModes(
+            int settingCount,
+            int advancedOnlySettingCount)
         {
-            return ShowFilters(settingCount);
+            return ShowFilters(settingCount) &&
+                advancedOnlySettingCount >=
+                    MinimumAdditionalAdvancedSettings;
         }
     }
 }

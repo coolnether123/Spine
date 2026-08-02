@@ -8,8 +8,8 @@
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Spine">
-      <HintPath>$(SpineFixtureAssembly)</HintPath>
+    <Reference Include="Spine.Transpilers">
+      <HintPath>$(RwtDependencySpineTranspilers)</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
@@ -39,8 +39,8 @@
   </ItemGroup>
   <Target Name="RequireFixtureDependencies" BeforeTargets="ResolveReferences">
     <Error
-      Condition="'$(SpineFixtureAssembly)' == '' or !Exists('$(SpineFixtureAssembly)')"
-      Text="SpineFixtureAssembly must point to the fresh standalone Spine build." />
+      Condition="'$(RwtDependencySpineTranspilers)' == '' or !Exists('$(RwtDependencySpineTranspilers)')"
+      Text="RwtDependencySpineTranspilers must point to the fresh optional transpiler build." />
     <Error
       Condition="'$(RimWorldManagedDir)' == '' or !Exists('$(RimWorldManagedDir)\Assembly-CSharp.dll')"
       Text="RimWorldManagedDir must point to RimWorld 1.6 managed assemblies." />

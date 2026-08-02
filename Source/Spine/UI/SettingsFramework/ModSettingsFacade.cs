@@ -44,7 +44,7 @@ namespace Spine.UI.SettingsFramework
         private static readonly SpineApiDescriptor CurrentDescriptor =
             new SpineApiDescriptor(
                 "CoolNether123.Spine.ModSettingsPages",
-                new SemanticVersion(1, 1, 0),
+                new SemanticVersion(1, 0, 0),
                 SpineCapability.Settings |
                 SpineCapability.ContextualSettings |
                 SpineCapability.ModSettingsPages);
@@ -84,6 +84,8 @@ namespace Spine.UI.SettingsFramework
             {
                 throw new ArgumentNullException(nameof(definitions));
             }
+
+            SettingDefinitions.Prepare(settingsObject, definitions);
 
             var pageOptions = options ?? new ModSettingsPageOptions();
             if (float.IsNaN(pageOptions.RowHeight) ||

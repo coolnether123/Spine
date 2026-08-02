@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Spine.UI.SettingsFramework
@@ -95,12 +94,7 @@ namespace Spine.UI.SettingsFramework
         /// <summary>
         /// Controls draw order within a hierarchy level. Lower values appear first.
         /// </summary>
-        public int SortOrder;
-
-        /// <summary>
-        /// Optional color override for headers.
-        /// </summary>
-        public Color? HeaderColor;
+        public int SortOrder = int.MinValue;
 
         /// <summary>
         /// Widget type used to render this setting.
@@ -111,31 +105,6 @@ namespace Spine.UI.SettingsFramework
         /// Default value used when resetting the setting.
         /// </summary>
         public object DefaultValue;
-
-        /// <summary>
-        /// Minimum allowed value for numeric settings.
-        /// </summary>
-        public float? MinValue;
-
-        /// <summary>
-        /// Maximum allowed value for numeric settings.
-        /// </summary>
-        public float? MaxValue;
-
-        /// <summary>
-        /// Label shown at the left end of sliders.
-        /// </summary>
-        public string MinLabel;
-
-        /// <summary>
-        /// Label shown at the right end of sliders.
-        /// </summary>
-        public string MaxLabel;
-
-        /// <summary>
-        /// Optional numeric value display format. Uses string.Format with the value as argument 0.
-        /// </summary>
-        public string ValueFormat;
 
         /// <summary>
         /// Enum type for enum-based settings.
@@ -168,35 +137,6 @@ namespace Spine.UI.SettingsFramework
         public Func<object, bool> VisibleWhen;
 
         /// <summary>
-        /// Optional rules that disable this setting at runtime without hiding it. The first active
-        /// rule explains itself under the row and, when it names a suppressing setting, links to it.
-        /// Suppression cascades: children of a suppressed setting are disabled too.
-        /// </summary>
-        public List<SettingSuppression> Suppressions;
-
-        /// <summary>
-        /// Returns the first suppression currently in force, or null when the setting is live.
-        /// </summary>
-        public SettingSuppression GetActiveSuppression(object settingsObject)
-        {
-            if (Suppressions == null)
-            {
-                return null;
-            }
-
-            for (int i = 0; i < Suppressions.Count; i++)
-            {
-                SettingSuppression suppression = Suppressions[i];
-                if (suppression != null && suppression.IsActive(settingsObject))
-                {
-                    return suppression;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// When true and this is a boolean parent, children are disabled when the parent is unchecked.
         /// </summary>
         public bool ControlsChildVisibility;
@@ -212,33 +152,9 @@ namespace Spine.UI.SettingsFramework
         public Action<object> OnChanged;
 
         /// <summary>
-        /// When true for a Bool type, render it with header styling (bold/underline) while keeping toggle behavior.
-        /// </summary>
-        public bool EmphasizeAsHeader = false;
-
-        /// <summary>
-        /// Provides the list of options for a DropdownListAdder setting.
-        /// </summary>
-        public Func<IEnumerable<string>> DropdownOptionsProvider;
-
-        /// <summary>
-        /// Callback invoked when an option is selected from a DropdownListAdder.
-        /// </summary>
-        public Action<string> OnOptionAdded;
-
-        /// <summary>
         /// Draws a custom row. Return true when the row changed settings.
         /// </summary>
         public Func<Rect, string, string, object, bool, bool> CustomDrawer;
 
-        /// <summary>
-        /// Returns true when a custom row differs from its default state.
-        /// </summary>
-        public Func<object, bool> CustomHasNonDefaultValue;
-
-        /// <summary>
-        /// Restores a custom row to its default state.
-        /// </summary>
-        public Action<object> CustomReset;
     }
 }

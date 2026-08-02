@@ -10,12 +10,6 @@ namespace Spine.UI.SettingsFramework
         /// <summary>Checkbox toggle for boolean values.</summary>
         Bool,
 
-        /// <summary>Integer input with optional buttons.</summary>
-        Int,
-
-        /// <summary>Horizontal slider for float values.</summary>
-        Float,
-
         /// <summary>Color swatch with picker dialog.</summary>
         Color,
 
@@ -27,15 +21,6 @@ namespace Spine.UI.SettingsFramework
 
         /// <summary>Non-interactive section header.</summary>
         Header,
-
-        /// <summary>Empty space for visual separation.</summary>
-        Spacer,
-
-        /// <summary>Dropdown button that adds selected options to a list of toggleable children.</summary>
-        DropdownListAdder,
-
-        /// <summary>Integer input with +/- buttons and text field.</summary>
-        NumericInt,
 
         /// <summary>Custom immediate-mode row supplied by a setting definition.</summary>
         Custom

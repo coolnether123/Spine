@@ -1,17 +1,30 @@
 # Spine architecture
 
-Spine is a feature-neutral shared runtime dependency. It contains copied and
-decoupled Better Work Tab infrastructure for:
+Spine is a feature-neutral shared runtime dependency. Its supported systems
+are deliberately limited to facilities used by the mod suite:
 
-- settings definitions, hierarchy, scribing, widgets, color picker, and layout;
-- Harmony compatibility helpers, fluent transpiler recipes, diagnostics, and
-  safety policies;
-- bounded caches, revision/dirty tracking, immutable snapshots, render
-  contracts, timing, and Scribe isolation.
+- runtime capability negotiation;
+- definition-driven settings pages and contextual settings navigation;
+- owner-preserving guarded Harmony installation;
+- opt-in stable tooltip sizing;
+- a bounded cache used by Filter Signals, Faction Lens, and BWT's embedded
+  renderer.
 
-Better Work Tab remains unchanged and continues compiling its embedded copy.
-Consumer mods reference `Spine.dll` and declare `CoolNether123.Spine` in
-`About.xml`; they never bundle the DLL themselves.
+The fluent transpiler recipes, stack validation, and emitted-IL diagnostics are
+an optional companion assembly. They do not inflate or initialize the core
+runtime used by the eight gameplay mods.
+
+BWT's work-grid snapshots, invalidation, rendering pipeline, profiling,
+serialization isolation, animation, layout, and settings import/export remain
+inside BWT. Their old location under BWT's `Source/Spine` folder does not make
+them standalone Spine APIs.
+
+Better Work Tab retains its self-contained embedded build and can also compile
+an external-Spine candidate. Its allowlisted shared mirror is checked against
+standalone Spine on every build. External mode references core Spine and the
+optional transpiler companion because BWT is the only current fluent
+transpiler consumer. Gameplay consumers reference only `Spine.dll`, declare
+`CoolNether123.Spine` in `About.xml`, and never bundle the DLL themselves.
 
 ## Public API shape
 
@@ -30,9 +43,14 @@ by only one facade implementation stays internal; a helper used by only one
 consumer stays in that consumer. Reuse alone is insufficient when the shared
 code would import gameplay semantics into Spine.
 
+Capability enum values are stable protocol identifiers, not an ordinal list.
+Retained capabilities keep their assigned bit even when an unrelated API is
+removed, and focused tests pin those values so a refactor cannot silently
+renumber already-built consumers.
+
 The intended capability boundaries are runtime discovery/negotiation,
 settings and contextual navigation, cooperative patching/transpiler safety,
-and proven RimWorld-neutral primitives. TechSense production knowledge,
+and proven RimWorld-neutral primitives. Filter Signals production knowledge,
 prisoner timing, SOS2 weapon behavior, Faction Lens world-map policy, and Better
 Work Tab behavior remain outside every Spine facade.
 
@@ -45,16 +63,29 @@ tooltips, callbacks, write timing, and gameplay effects. This facade replaces
 the same page wrapper and translation fallback previously repeated by each
 gameplay mod.
 
+`SpineMod<TSettings>` provides inherited static settings and contextual-lease
+access, eliminating consumer singleton plumbing. `SettingDefinitions` provides
+compact factories. Preparation derives omitted sort order from registry
+position and omitted defaults from a fresh `TSettings`; explicit scribe keys
+remain available for established save keys and migration aliases.
+
 Toolbar density is definition-driven inside the facade. Fewer than five
 configurable rows draw no search; ten or fewer use one unified view with no
-category or simple/advanced filters; larger pages may use the full toolbar.
+category or simple/advanced filters. Larger pages keep search, while
+Simple/Advanced appears only when Advanced contributes at least four additional
+rows; otherwise all rows remain on the unified page.
 Contextual navigation clears transient search/filter state and only centers and
 highlights the resolved row. It never changes the visible setting population.
 
-Harmony helpers require the consuming mod to pass its own `Harmony` instance.
-Spine never owns consumer patches under a shared fallback ID. This keeps patch
-diagnostics attributable and lets one mod unpatch its work without affecting
-another consumer.
+The patch-installer facade creates exactly one Harmony instance for a consumer
+ID. It owns install-once keys, standard safety-result handling, and mandatory
+target-specific diagnostics. Spine never owns consumer patches under a shared
+fallback ID. This keeps ownership attributable and lets one mod unpatch its
+work without affecting another consumer.
+
+`SpineApi.Patching` is the only public patch-installation route. Its
+`HarmonyPatchOptions` contract prevents consumers from binding to the internal
+patch scanner and imported compatibility machinery.
 
 Tooltip stabilization belongs behind an opt-in UI capability facade; loading
 Spine alone does not install it. The current implementation acquires and

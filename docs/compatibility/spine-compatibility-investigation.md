@@ -1,5 +1,9 @@
 # Spine compatibility and shared-library investigation
 
+> Historical pre-boundary audit. The unused BWT-derived systems identified in
+> this report were removed from standalone Spine during the 1.0 boundary
+> cleanup. Current API ownership is documented in `docs/architecture.md`.
+
 Investigation date: 2026-07-31 (America/Chicago). This is an evidence-only
 report. No compatibility code or tests were changed.
 

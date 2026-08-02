@@ -33,13 +33,6 @@ namespace Spine.TranspilerFixtures
         {
             try
             {
-                foreach (var result in
-                    TranspilerTestHarness.RunAllHarnessCases())
-                {
-                    Console.WriteLine(result);
-                }
-                TranspilerTestHarness.AssertAllHarnessCasesPass();
-
                 RunPatch(
                     "branch labels",
                     nameof(BranchingTarget),
