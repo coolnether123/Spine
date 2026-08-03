@@ -248,3 +248,12 @@ contained its two conditional `Better Work Tab.dll` variants and existing
 Multiplayer API dependencies, with no PDB or separate Spine assembly. The
 tooling regression suite now places a PDB directly beside a fixture DLL and
 proves that selecting the DLL still excludes the symbol and developer package.
+## Final 1.0 release-candidate gate — 2026-08-03
+
+Spine was rebuilt from clean source and passed its 12-contract/95-assertion
+suite, stable-tooltip sizing checks, consumer-facade checks, settings boundary
+checks, package validation, and live all-consumer verification. All eight
+gameplay consumers loaded together, retained distinct Harmony ownership, and
+completed save/reload checks in UI/content, performance, and Multiplayer
+stacks. Spine installed no gameplay patches beyond services acquired by a
+consumer.

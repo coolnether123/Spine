@@ -17,5 +17,7 @@
   <loadAfter>
     <li>brrainz.harmony</li>
   </loadAfter>
-  <description>Shared settings, contextual UI, bounded caching, and cooperative patch installation for CoolNether123 RimWorld mods.</description>
+  <description>The shared foundation for CoolNether123 RimWorld mods.
+
+Spine provides consistent settings pages, Alt-click settings navigation, stable tooltips, bounded caching, and cooperative Harmony patch installation. It performs no gameplay work on its own and activates optional services only when a consumer requests them.</description>
 </ModMetaData>
