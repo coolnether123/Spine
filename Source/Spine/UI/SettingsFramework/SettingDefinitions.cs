@@ -18,14 +18,8 @@ namespace Spine.UI.SettingsFramework
         public static SettingDefinition Header(
             string id,
             string label,
-            string labelKey = null,
-            SettingPin pin = SettingPin.None)
-        {
-            SettingDefinition definition =
-                Base(id, SettingType.Header, label, labelKey);
-            definition.Pin = pin;
-            return definition;
-        }
+            string labelKey = null) =>
+            Base(id, SettingType.Header, label, labelKey);
 
         public static SettingDefinition Toggle(
             string id,
@@ -38,8 +32,7 @@ namespace Spine.UI.SettingsFramework
             bool simple = true,
             bool controlsChildren = false,
             string scribeKey = null,
-            Action<object> onChanged = null,
-            Func<object, bool> visibleWhen = null)
+            Action<object> onChanged = null)
         {
             SettingDefinition definition = Base(
                 id,
@@ -54,7 +47,6 @@ namespace Spine.UI.SettingsFramework
             definition.ShowInSimpleView = simple;
             definition.ControlsChildVisibility = controlsChildren;
             definition.OnChanged = onChanged;
-            definition.VisibleWhen = visibleWhen;
             return definition;
         }
 
@@ -95,9 +87,7 @@ namespace Spine.UI.SettingsFramework
             string label,
             string labelKey = null,
             string tooltipKey = null,
-            string scribeKey = null,
-            bool simple = true,
-            Func<object, bool> visibleWhen = null)
+            string scribeKey = null)
         {
             SettingDefinition definition = Base(
                 id,
@@ -107,8 +97,6 @@ namespace Spine.UI.SettingsFramework
                 tooltipKey: tooltipKey);
             definition.FieldName = fieldName;
             definition.ScribeKey = scribeKey;
-            definition.ShowInSimpleView = simple;
-            definition.VisibleWhen = visibleWhen;
             return definition;
         }
 
@@ -117,9 +105,7 @@ namespace Spine.UI.SettingsFramework
             string label,
             Action<object> action,
             string labelKey = null,
-            string tooltipKey = null,
-            bool simple = true,
-            Func<object, bool> visibleWhen = null)
+            string tooltipKey = null)
         {
             SettingDefinition definition = Base(
                 id,
@@ -128,8 +114,6 @@ namespace Spine.UI.SettingsFramework
                 labelKey,
                 tooltipKey: tooltipKey);
             definition.OnChanged = action;
-            definition.ShowInSimpleView = simple;
-            definition.VisibleWhen = visibleWhen;
             return definition;
         }
 
@@ -137,8 +121,7 @@ namespace Spine.UI.SettingsFramework
             string id,
             Func<Rect, string, string, object, bool, bool> drawer,
             string label = "",
-            string labelKey = "",
-            SettingPin pin = SettingPin.None)
+            string labelKey = "")
         {
             SettingDefinition definition = Base(
                 id,
@@ -146,7 +129,6 @@ namespace Spine.UI.SettingsFramework
                 label,
                 labelKey);
             definition.CustomDrawer = drawer;
-            definition.Pin = pin;
             return definition;
         }
 
@@ -296,4 +278,65 @@ namespace Spine.UI.SettingsFramework
                 ShowInAdvancedView = true
             };
     }
+
+    /// <summary>
+    /// Post-construction refinements for setting definitions.
+    ///
+    /// These exist so the factory signatures above never have to change again.
+    /// Adding a parameter to an existing public method is a BINARY-BREAKING
+    /// change in C#: a caller bakes the whole argument list into its IL, so a
+    /// consumer compiled against the old signature throws MissingMethodException
+    /// against the new assembly even though its source would still compile
+    /// unchanged. That once broke every mod built on Spine, from a change that
+    /// looked additive.
+    ///
+    /// So: DO NOT add parameters to the factories. Add a refinement here. A new
+    /// method is always binary-safe, and consumers opt in by recompiling rather
+    /// than by breaking.
+    /// </summary>
+    public static class SettingRefinements
+    {
+        /// <summary>Holds this entry outside the scrolling region.</summary>
+        public static SettingDefinition Pinned(
+            this SettingDefinition definition,
+            SettingPin pin)
+        {
+            if (definition != null)
+            {
+                definition.Pin = pin;
+            }
+
+            return definition;
+        }
+
+        /// <summary>
+        /// Shows this entry only while the predicate holds for the settings
+        /// object. Named ShownWhen rather than VisibleWhen so it cannot be
+        /// confused with the field of that name, which is a delegate.
+        /// </summary>
+        public static SettingDefinition ShownWhen(
+            this SettingDefinition definition,
+            Func<object, bool> predicate)
+        {
+            if (definition != null)
+            {
+                definition.VisibleWhen = predicate;
+            }
+
+            return definition;
+        }
+
+        /// <summary>Hides this entry from the Simple view.</summary>
+        public static SettingDefinition AdvancedOnly(
+            this SettingDefinition definition)
+        {
+            if (definition != null)
+            {
+                definition.ShowInSimpleView = false;
+            }
+
+            return definition;
+        }
+    }
+
 }
