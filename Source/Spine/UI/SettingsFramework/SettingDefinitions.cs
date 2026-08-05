@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using Verse;
 
 namespace Spine.UI.SettingsFramework
 {
@@ -11,11 +12,20 @@ namespace Spine.UI.SettingsFramework
     /// </summary>
     public static class SettingDefinitions
     {
+        private static readonly HashSet<string> AuditedSettingsTypes =
+            new HashSet<string>(StringComparer.Ordinal);
+
         public static SettingDefinition Header(
             string id,
             string label,
-            string labelKey = null) =>
-            Base(id, SettingType.Header, label, labelKey);
+            string labelKey = null,
+            SettingPin pin = SettingPin.None)
+        {
+            SettingDefinition definition =
+                Base(id, SettingType.Header, label, labelKey);
+            definition.Pin = pin;
+            return definition;
+        }
 
         public static SettingDefinition Toggle(
             string id,
@@ -83,7 +93,8 @@ namespace Spine.UI.SettingsFramework
             string label,
             string labelKey = null,
             string tooltipKey = null,
-            string scribeKey = null)
+            string scribeKey = null,
+            bool simple = true)
         {
             SettingDefinition definition = Base(
                 id,
@@ -93,6 +104,7 @@ namespace Spine.UI.SettingsFramework
                 tooltipKey: tooltipKey);
             definition.FieldName = fieldName;
             definition.ScribeKey = scribeKey;
+            definition.ShowInSimpleView = simple;
             return definition;
         }
 
@@ -101,7 +113,8 @@ namespace Spine.UI.SettingsFramework
             string label,
             Action<object> action,
             string labelKey = null,
-            string tooltipKey = null)
+            string tooltipKey = null,
+            bool simple = true)
         {
             SettingDefinition definition = Base(
                 id,
@@ -110,6 +123,7 @@ namespace Spine.UI.SettingsFramework
                 labelKey,
                 tooltipKey: tooltipKey);
             definition.OnChanged = action;
+            definition.ShowInSimpleView = simple;
             return definition;
         }
 
@@ -117,7 +131,8 @@ namespace Spine.UI.SettingsFramework
             string id,
             Func<Rect, string, string, object, bool, bool> drawer,
             string label = "",
-            string labelKey = "")
+            string labelKey = "",
+            SettingPin pin = SettingPin.None)
         {
             SettingDefinition definition = Base(
                 id,
@@ -125,6 +140,7 @@ namespace Spine.UI.SettingsFramework
                 label,
                 labelKey);
             definition.CustomDrawer = drawer;
+            definition.Pin = pin;
             return definition;
         }
 
@@ -173,6 +189,86 @@ namespace Spine.UI.SettingsFramework
                     definition.DefaultValue = field.GetValue(pristine);
                 }
             }
+
+            ValidatePresentation(settingsType, definitions);
+        }
+
+        /// <summary>
+        /// Development-time audit of a consumer's setting definitions. Reports two
+        /// things a player would otherwise discover the hard way: an interactive
+        /// setting with nothing to read when they hover it, and a translation key
+        /// that will not resolve at runtime.
+        /// Runs once per settings type and only under dev mode, so a shipped game
+        /// pays nothing and players never see it. Prepare is reached lazily, after
+        /// language data has loaded, which is what makes the key check meaningful.
+        /// </summary>
+        private static void ValidatePresentation(
+            Type settingsType,
+            IReadOnlyList<SettingDefinition> definitions)
+        {
+            if (settingsType == null ||
+                !Prefs.DevMode ||
+                !AuditedSettingsTypes.Add(settingsType.FullName))
+            {
+                return;
+            }
+
+            List<string> problems = new List<string>();
+            for (int index = 0; index < definitions.Count; index++)
+            {
+                SettingDefinition definition = definitions[index];
+                if (definition == null)
+                {
+                    continue;
+                }
+
+                string id = string.IsNullOrEmpty(definition.Id)
+                    ? "(no id)"
+                    : definition.Id;
+
+                if (!string.IsNullOrEmpty(definition.LabelKey) &&
+                    !definition.LabelKey.CanTranslate())
+                {
+                    problems.Add(
+                        "  " + id + ": LabelKey '" + definition.LabelKey +
+                        "' has no translation entry.");
+                }
+
+                if (!string.IsNullOrEmpty(definition.TooltipKey) &&
+                    !definition.TooltipKey.CanTranslate())
+                {
+                    problems.Add(
+                        "  " + id + ": TooltipKey '" + definition.TooltipKey +
+                        "' has no translation entry.");
+                }
+
+                if (WantsExplanation(definition.Type) &&
+                    string.IsNullOrEmpty(definition.TooltipKey) &&
+                    string.IsNullOrEmpty(definition.Tooltip))
+                {
+                    problems.Add(
+                        "  " + id + ": no tooltip. A player who hovers this " +
+                        "setting has nothing to read.");
+                }
+            }
+
+            if (problems.Count == 0)
+            {
+                return;
+            }
+
+            Log.Warning(
+                "[Spine] Settings audit for " + settingsType.Name +
+                " found " + problems.Count + " issue(s):\n" +
+                string.Join("\n", problems.ToArray()));
+        }
+
+        private static bool WantsExplanation(SettingType type)
+        {
+            return type == SettingType.Bool ||
+                type == SettingType.Color ||
+                type == SettingType.Enum ||
+                type == SettingType.Button;
         }
 
         private static SettingDefinition Base(

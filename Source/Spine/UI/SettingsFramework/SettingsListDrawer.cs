@@ -466,6 +466,14 @@ namespace Spine.UI.SettingsFramework
             GUI.color = Color.white;
         }
 
+        private const float PinnedBandGap = 6f;
+        private readonly List<SettingDefinition> _pinnedTop =
+            new List<SettingDefinition>();
+        private readonly List<SettingDefinition> _pinnedBottom =
+            new List<SettingDefinition>();
+        private readonly List<SettingDefinition> _scrollingSettings =
+            new List<SettingDefinition>();
+
         /// <summary>
         /// Draws the scrollable list of settings.
         /// </summary>
@@ -489,20 +497,26 @@ namespace Spine.UI.SettingsFramework
                 return;
             }
 
+            Rect listRect = PartitionPinnedEntries(
+                rect,
+                visibleSettings,
+                settingsObject,
+                onSettingsChanged);
+
             if (!string.IsNullOrEmpty(_pendingFocusSettingId))
             {
-                CenterOnSettingId(_pendingFocusSettingId, visibleSettings, settingsObject, rect.height);
+                CenterOnSettingId(_pendingFocusSettingId, _scrollingSettings, settingsObject, listRect.height);
                 _pendingFocusSettingId = null;
             }
 
             float clearFilterRowHeight = _activeFilter != null ? RowHeight + 8f : 0f;
-            float viewHeight = MeasureTotalHeight(visibleSettings, settingsObject) + clearFilterRowHeight;
-            Rect viewRect = new Rect(0f, 0f, rect.width - 16f, viewHeight);
+            float viewHeight = MeasureTotalHeight(_scrollingSettings, settingsObject) + clearFilterRowHeight;
+            Rect viewRect = new Rect(0f, 0f, listRect.width - 16f, viewHeight);
 
-            Widgets.BeginScrollView(rect, ref _scrollPosition, viewRect);
+            Widgets.BeginScrollView(listRect, ref _scrollPosition, viewRect);
 
             float curY = 0f;
-            foreach (var def in visibleSettings)
+            foreach (var def in _scrollingSettings)
             {
                 int depth = _hierarchy.GetDepth(def);
                 bool disabledByAncestor = _hierarchy.IsDisabledByAncestor(def, settingsObject);
@@ -533,6 +547,135 @@ namespace Spine.UI.SettingsFramework
             }
 
             Widgets.EndScrollView();
+        }
+
+        /// <summary>
+        /// Splits entries into pinned bands and the scrolling remainder, draws the
+        /// bands, and returns the rect the scrolling list should occupy. Pinning is
+        /// abandoned wholesale when the bands would consume more than half the page,
+        /// so a page can never pin away the list it belongs to.
+        /// </summary>
+        private Rect PartitionPinnedEntries(
+            Rect rect,
+            List<SettingDefinition> visibleSettings,
+            object settingsObject,
+            Action onSettingsChanged)
+        {
+            _pinnedTop.Clear();
+            _pinnedBottom.Clear();
+            _scrollingSettings.Clear();
+
+            bool anyPinned = false;
+            for (int index = 0; index < visibleSettings.Count; index++)
+            {
+                if (visibleSettings[index].Pin != SettingPin.None)
+                {
+                    anyPinned = true;
+                    break;
+                }
+            }
+
+            if (!anyPinned)
+            {
+                _scrollingSettings.AddRange(visibleSettings);
+                return rect;
+            }
+
+            for (int index = 0; index < visibleSettings.Count; index++)
+            {
+                SettingDefinition def = visibleSettings[index];
+                switch (def.Pin)
+                {
+                    case SettingPin.Top:
+                        _pinnedTop.Add(def);
+                        break;
+                    case SettingPin.Bottom:
+                        _pinnedBottom.Add(def);
+                        break;
+                    default:
+                        _scrollingSettings.Add(def);
+                        break;
+                }
+            }
+
+            float topHeight = MeasureTotalHeight(_pinnedTop, settingsObject);
+            float bottomHeight = MeasureTotalHeight(_pinnedBottom, settingsObject);
+            if (topHeight + bottomHeight > rect.height * 0.5f)
+            {
+                _pinnedTop.Clear();
+                _pinnedBottom.Clear();
+                _scrollingSettings.Clear();
+                _scrollingSettings.AddRange(visibleSettings);
+                return rect;
+            }
+
+            Rect listRect = rect;
+            if (topHeight > 0f)
+            {
+                DrawPinnedBand(
+                    new Rect(rect.x, rect.y, rect.width, topHeight),
+                    _pinnedTop,
+                    settingsObject,
+                    onSettingsChanged);
+                Widgets.DrawLineHorizontal(
+                    rect.x,
+                    rect.y + topHeight + (PinnedBandGap / 2f),
+                    rect.width);
+                listRect.yMin += topHeight + PinnedBandGap;
+            }
+
+            if (bottomHeight > 0f)
+            {
+                float bandY = rect.yMax - bottomHeight;
+                DrawPinnedBand(
+                    new Rect(rect.x, bandY, rect.width, bottomHeight),
+                    _pinnedBottom,
+                    settingsObject,
+                    onSettingsChanged);
+                Widgets.DrawLineHorizontal(
+                    rect.x,
+                    bandY - (PinnedBandGap / 2f),
+                    rect.width);
+                listRect.yMax -= bottomHeight + PinnedBandGap;
+            }
+
+            return listRect;
+        }
+
+        /// <summary>
+        /// Draws pinned entries directly, outside any scroll view.
+        /// </summary>
+        private void DrawPinnedBand(
+            Rect bandRect,
+            List<SettingDefinition> entries,
+            object settingsObject,
+            Action onSettingsChanged)
+        {
+            float curY = bandRect.y;
+            for (int index = 0; index < entries.Count; index++)
+            {
+                SettingDefinition def = entries[index];
+                float rowHeight = MeasureRowHeight(def, settingsObject);
+                Rect rowRect = new Rect(
+                    bandRect.x,
+                    curY,
+                    bandRect.width - 16f,
+                    rowHeight);
+                bool disabledByAncestor =
+                    _hierarchy.IsDisabledByAncestor(def, settingsObject);
+                bool allowFocusedDisabledInteraction =
+                    disabledByAncestor && IsFocusedForcedVisibleSetting(def);
+
+                DrawFocusedSettingHighlight(rowRect, def);
+                DrawSettingRow(
+                    rowRect,
+                    def,
+                    settingsObject,
+                    disabledByAncestor && !allowFocusedDisabledInteraction,
+                    _hierarchy.GetDepth(def),
+                    onSettingsChanged);
+                curY += rowHeight;
+            }
         }
 
         /// <summary>

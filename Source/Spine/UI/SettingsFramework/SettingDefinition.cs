@@ -22,6 +22,21 @@ namespace Spine.UI.SettingsFramework
     }
 
     /// <summary>
+    /// Where an entry is drawn relative to the scrolling region.
+    /// </summary>
+    public enum SettingPin
+    {
+        /// <summary>Normal entry inside the scrolling list.</summary>
+        None,
+
+        /// <summary>Held above the list; stays visible while the list scrolls.</summary>
+        Top,
+
+        /// <summary>Held below the list; stays visible while the list scrolls.</summary>
+        Bottom
+    }
+
+    /// <summary>
     /// Defines a single configurable setting with optional parent-child relationships.
     /// </summary>
     public class SettingDefinition
@@ -127,7 +142,14 @@ namespace Spine.UI.SettingsFramework
         public bool ShowInSimpleView;
 
         /// <summary>
-        /// If true, the setting is visible in the Advanced view. Defaults to true.
+        /// If true, the setting is visible in the Advanced view even when it is
+        /// hidden from Simple. Defaults to true.
+        /// <para>
+        /// Advanced is a superset of Simple: anything with
+        /// <see cref="ShowInSimpleView"/> set also appears in Advanced,
+        /// regardless of this flag. Clearing this flag alone hides a setting
+        /// from both views.
+        /// </para>
         /// </summary>
         public bool ShowInAdvancedView = true;
 
@@ -155,6 +177,15 @@ namespace Spine.UI.SettingsFramework
         /// Draws a custom row. Return true when the row changed settings.
         /// </summary>
         public Func<Rect, string, string, object, bool, bool> CustomDrawer;
+
+        /// <summary>
+        /// Holds this entry outside the scrolling region so it stays visible while
+        /// the rest of the page scrolls. Useful for a live preview that a player
+        /// needs to watch while changing the settings that feed it.
+        /// Ignored when the pinned bands would take more than half the page, so a
+        /// page can never pin away the list it belongs to.
+        /// </summary>
+        public SettingPin Pin = SettingPin.None;
 
     }
 }
