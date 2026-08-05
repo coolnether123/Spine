@@ -103,9 +103,39 @@ settings; three or fewer advanced-only settings are shown in one unified page.
 
 Every factory takes the same leading arguments — id, field name, fallback
 label, then optional translation keys — so a reader never has to work out which
-factory they are looking at to know what the third argument means. Anything
-specific to one widget is a **refinement**: a chained method that says its own
-name.
+factory they are looking at to know what the third argument means.
+
+Most settings need nothing more than that. A checkbox bound to a bool field:
+
+```csharp
+SettingDefinitions.Toggle(
+    "visuals.legend",
+    nameof(ExampleSettings.ShowLegend),
+    "Show legend",
+    "Example_Settings_Legend",
+    tooltipKey: "Example_Settings_Legend_Tip",
+    scribeKey: "showLegend")
+```
+
+And a button, which runs an action instead of storing a value:
+
+```csharp
+SettingDefinitions.Button(
+    "colors.reset",
+    "Reset all",
+    settings => ((ExampleSettings)settings).ApplyDefaults(),
+    "Example_Settings_Reset",
+    tooltipKey: "Example_Settings_Reset_Tip")
+```
+
+That is the whole API for the common case. The rest of this section is for the
+settings that need shaping beyond a label and a field.
+
+#### Refinements
+
+Anything specific to one widget is a **refinement**: a chained method that says
+its own name. A slider, for instance, needs bounds, and bounds passed as bare
+arguments would be two anonymous floats:
 
 ```csharp
 SettingDefinitions.Slider(
@@ -120,10 +150,9 @@ SettingDefinitions.Slider(
     .ShowsPercent()
 ```
 
-Compare that with the same call written as positional arguments, where
-`0.35f, 1f` in the middle of the list tells a reader nothing about which is the
-minimum, what units it is in, or whether a third number is coming. Refinements
-cost one line each and remove the guessing.
+Written positionally, a reader meeting `0.35f, 1f` mid-call learns nothing
+about which is the minimum, what units it is in, or whether a third number is
+coming. Refinements cost one line each and remove the guessing.
 
 Available refinements, all in `SettingRefinements`, all chainable in any order:
 
