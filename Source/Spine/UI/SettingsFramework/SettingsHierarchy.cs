@@ -341,9 +341,15 @@ namespace Spine.UI.SettingsFramework
                 return def.ShowInSimpleView || def.ShowInAdvancedView;
             }
 
+            // Advanced is a superset of Simple, not a sibling list: it is the
+            // simple list plus the settings hidden from it. ShowInAdvancedView
+            // therefore means "advanced-only"; simple membership always implies
+            // advanced membership. Enforcing it here makes it an invariant of
+            // the framework rather than a convention that one stray
+            // "ShowInAdvancedView = false" can quietly break.
             return viewMode == SettingsViewMode.Simple
                 ? def.ShowInSimpleView
-                : def.ShowInAdvancedView;
+                : def.ShowInAdvancedView || def.ShowInSimpleView;
         }
 
         private static bool ReadBoolValue(SettingDefinition def, object settingsObject)
