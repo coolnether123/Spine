@@ -8,6 +8,13 @@
   "configuration": "Release",
   "assemblyName": "Spine",
   "packageId": "CoolNether123.Spine",
+  "releaseIncludePaths": [
+    "About",
+    "1.6/Assemblies/Spine.dll",
+    "Languages",
+    "LICENSE",
+    "README.md"
+  ],
   "dependencies": [
     "harmony"
   ]
