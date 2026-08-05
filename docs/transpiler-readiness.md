@@ -9,37 +9,38 @@ transpiler in the Spine package while making no store-page claim about it.
 Section 2 is why the claim is withheld; section 1 is what must change for the
 shipping half of that decision to actually happen.
 
-## 1. Shipping it requires packaging changes that are not yet made
+## 1. Packaging — implemented
 
-As of this review the transpiler **would not ship**. Three facts:
+The transpiler now ships inside the Spine package. Three changes made this
+true, and they are the things to re-check if the packaging is ever revisited:
 
-- `Engineering/build.json` declares `releaseIncludePaths` as `About`,
-  `1.6/Assemblies/Spine.dll`, `Languages`, `LICENSE`, `README.md`. No
-  transpiler assembly is listed, and the allowlist is explicit, so anything
-  unlisted is excluded.
-- `1.6/Assemblies/` contains only `Spine.dll`. There is no
-  `Spine.Transpilers.dll` in the shipping folder to include.
-- The transpiler is built as a separate mod under
-  `Developer/Spine.Transpilers`, which carries its own `About` and `1.6`
-  folders.
+- `Source/Spine.Transpilers.csproj` now emits to `..\1.6\Assemblies\` instead of
+  `..\Developer\Spine.Transpilers\1.6\Assemblies\`, so the assembly is built
+  into Spine's own shipping folder.
+- `Engineering/build.json` lists `1.6/Assemblies/Spine.Transpilers.dll` in
+  `releaseIncludePaths`. That allowlist is explicit, so an unlisted file is
+  excluded; this entry is what actually causes the assembly to ship.
+- `README.md` no longer describes the transpiler as a separate developer mod
+  that must never be included in the Workshop upload. That policy was reversed,
+  and leaving the text in place would have documented a rule the release
+  violates.
 
-To ship it inside Spine, the transpiler assembly has to be built into
-`Spine/1.6/Assemblies/` and added to `releaseIncludePaths`. Until both are done
-the shipping decision is not in effect regardless of intent.
+Two consequences accepted deliberately:
 
-Two consequences worth deciding on deliberately:
+- RimWorld loads every assembly in a mod's `Assemblies` folder, so every Spine
+  subscriber now loads roughly 170 KB of transpiler code that does nothing
+  unless a consumer calls into it.
+- `Spine.Transpilers.dll` carries its own copies of `HarmonyCompat` and
+  `HarmonyLog`. Those type names therefore exist in two assemblies loaded
+  together. This is legal and was already the case for anyone running both mods,
+  but it is now universal rather than opt-in.
+- `Developer/Spine.Transpilers/` remains in the tree with a now-stale assembly.
+  It is excluded from the release allowlist either way, so it does not affect
+  the package, but it is no longer the build target.
 
-- RimWorld loads every assembly in a mod's `Assemblies` folder, so bundling
-  means every Spine subscriber loads roughly 170 KB of transpiler code that
-  does nothing unless a consumer calls into it. That is harmless but real.
-- `README.md` currently states the opposite policy in three places — lines 9,
-  112, and 128 describe `Spine.Transpilers` as a separate developer mod that
-  "must never be included in the ordinary Spine Workshop upload." Those
-  passages contradict the new decision and must be rewritten, or the repository
-  documents a rule the release violates.
-
-The store page still omits the subsystem. Shipping something and advertising it
-are separate choices, and the reasons for withholding the claim are below.
+Shipping and advertising are separate choices. The package includes the
+subsystem; the store page, `About.xml`, and the repository README say nothing
+about it. The reasons for withholding the public claim are below.
 
 ## 2. Cooperative transpiling specifically is unproven
 
