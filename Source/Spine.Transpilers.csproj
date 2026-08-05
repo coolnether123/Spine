@@ -6,7 +6,7 @@
     <RootNamespace>Spine</RootNamespace>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <OutputPath>..\Developer\Spine.Transpilers\1.6\Assemblies\</OutputPath>
+    <OutputPath>..\1.6\Assemblies\</OutputPath>
     <RwtUseHarmony>true</RwtUseHarmony>
   </PropertyGroup>
   <ItemGroup>

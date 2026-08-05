@@ -11,6 +11,7 @@
   "releaseIncludePaths": [
     "About",
     "1.6/Assemblies/Spine.dll",
+    "1.6/Assemblies/Spine.Transpilers.dll",
     "Languages",
     "LICENSE",
     "README.md"
