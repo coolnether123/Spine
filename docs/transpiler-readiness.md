@@ -34,9 +34,10 @@ Two consequences accepted deliberately:
   `HarmonyLog`. Those type names therefore exist in two assemblies loaded
   together. This is legal and was already the case for anyone running both mods,
   but it is now universal rather than opt-in.
-- `Developer/Spine.Transpilers/` remains in the tree with a now-stale assembly.
-  It is excluded from the release allowlist either way, so it does not affect
-  the package, but it is no longer the build target.
+- `Developer/Spine.Transpilers/` is no longer tracked. It held a stale copy of
+  the assembly from when the transpiler was a separate developer mod, was
+  excluded from the release allowlist either way, and would only have misled a
+  reader of the public repository into thinking it was still the build target.
 
 Shipping and advertising are separate choices. The package includes the
 subsystem; the store page, `About.xml`, and the repository README say nothing

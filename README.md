@@ -7,15 +7,16 @@ player-facing gameplay by itself.
 
 ## Install
 
-Install Harmony, then install the staged Spine package as an ordinary RimWorld
-mod and place Spine before mods that declare `CoolNether123.Spine` as a
-dependency. Do not copy `Spine.dll` into consumer mods.
+Install Harmony first, then copy the `Spine` folder into RimWorld's `Mods`
+directory and load Spine before any mod that declares `CoolNether123.Spine` as
+a dependency.
 
-Spine does not yet have a public Workshop or download URL. The verified local
-RimWorld 1.6 distribution therefore ships Spine and its gameplay consumers
-together. Copy the `Spine` folder alongside any gameplay-mod folder you choose
-to install. Each gameplay
-mod remains independently selectable and depends on no other gameplay mod.
+Never copy `Spine.dll` into a consumer mod. Two copies of the same types loaded
+at once is precisely the situation a shared runtime exists to prevent.
+
+Spine is not on the Steam Workshop yet; take a build from this repository. Each
+consumer mod stays independently selectable and depends on no other gameplay
+mod.
 
 ## Consumer rules
 
@@ -136,6 +137,6 @@ the narrowest required installation.
 The public Spine mod contains the runtime metadata, languages, documentation,
 and the assemblies named in the release
 allowlist. Stage those paths through RimWorld-Tooling's explicit release
-allowlist; never upload the repository as the package. `Developer/`, `Source/`, `Tests/`, `Engineering/`, symbols, build
-logs, and intermediate outputs are development material and are not part of
-the public Spine runtime.
+allowlist; never upload the repository as the package. `Source/`, `Tests/`,
+`Engineering/`, symbols, build logs, and intermediate outputs are development
+material and are not part of the public Spine runtime.

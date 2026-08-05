@@ -7,3 +7,7 @@ Engineering/artifacts/
 1.6/Assemblies/build/
 1.6/Assemblies/*.log
 1.6/Assemblies/*.pdb
+
+# Local developer scaffolding. Never part of the release payload, and its built
+# assemblies go stale the moment the shipping mod moves on.
+Developer/
