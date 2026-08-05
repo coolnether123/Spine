@@ -95,6 +95,36 @@ search, category filters, and view filters when they would not be useful.
 Simple/Advanced appears only when Advanced contributes at least four additional
 settings; three or fewer advanced-only settings are shown in one unified page.
 
+### Setting types
+
+`SettingDefinitions` supplies `Header`, `Toggle`, `Enum`, `Colour`, `Slider`,
+`Button`, and `Custom`. `Slider` binds a float field to a dragged range:
+
+```csharp
+SettingDefinitions.Slider(
+    "visuals.opacity",
+    nameof(ExampleSettings.Opacity),
+    0.35f, 1f,
+    "Label opacity",
+    "Example_Settings_Opacity",
+    tooltipKey: "Example_Settings_Opacity_Tip",
+    step: 0.05f,
+    valueFormatter: value => Mathf.RoundToInt(value * 100f) + "%",
+    scribeKey: "labelOpacity")
+```
+
+`step` quantises the value so a player cannot land on 0.7431, and
+`valueFormatter` controls the readout beside the slider. Both are optional.
+
+Post-construction refinements — `Pinned`, `ShownWhen`, `AdvancedOnly` — are
+extension methods in `SettingRefinements` rather than factory parameters.
+That is deliberate and load-bearing: adding a parameter to an existing public
+method is a binary-breaking change in C#, because a caller bakes the whole
+argument list into its IL. A consumer compiled against the older Spine then
+throws `MissingMethodException` against the newer assembly even though its
+source would still compile. New capability arrives as a new method or a new
+refinement, never as a new parameter on an existing signature.
+
 `SpineApi.Patching` is the single public entry point for guarded patch
 installation. `CreateInstaller` owns one consumer-ID Harmony instance,
 install-once keys, target-specific mandatory failure diagnostics, and the
