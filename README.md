@@ -99,32 +99,51 @@ settings; three or fewer advanced-only settings are shown in one unified page.
 ### Setting types
 
 `SettingDefinitions` supplies `Header`, `Toggle`, `Enum`, `Colour`, `Slider`,
-`Button`, and `Custom`. `Slider` binds a float field to a dragged range:
+`Button`, and `Custom`.
+
+Every factory takes the same leading arguments — id, field name, fallback
+label, then optional translation keys — so a reader never has to work out which
+factory they are looking at to know what the third argument means. Anything
+specific to one widget is a **refinement**: a chained method that says its own
+name.
 
 ```csharp
 SettingDefinitions.Slider(
-    "visuals.opacity",
-    nameof(ExampleSettings.Opacity),
-    0.35f, 1f,
-    "Label opacity",
-    "Example_Settings_Opacity",
-    tooltipKey: "Example_Settings_Opacity_Tip",
-    step: 0.05f,
-    valueFormatter: value => Mathf.RoundToInt(value * 100f) + "%",
-    scribeKey: "labelOpacity")
+        "visuals.opacity",
+        nameof(ExampleSettings.Opacity),
+        "Label opacity",
+        "Example_Settings_Opacity",
+        tooltipKey: "Example_Settings_Opacity_Tip",
+        scribeKey: "labelOpacity")
+    .Range(0.35f, 1f)
+    .Step(0.05f)
+    .ShowsPercent()
 ```
 
-`step` quantises the value so a player cannot land on 0.7431, and
-`valueFormatter` controls the readout beside the slider. Both are optional.
+Compare that with the same call written as positional arguments, where
+`0.35f, 1f` in the middle of the list tells a reader nothing about which is the
+minimum, what units it is in, or whether a third number is coming. Refinements
+cost one line each and remove the guessing.
 
-Post-construction refinements — `Pinned`, `ShownWhen`, `AdvancedOnly` — are
-extension methods in `SettingRefinements` rather than factory parameters.
-That is deliberate and load-bearing: adding a parameter to an existing public
-method is a binary-breaking change in C#, because a caller bakes the whole
-argument list into its IL. A consumer compiled against the older Spine then
+Available refinements, all in `SettingRefinements`, all chainable in any order:
+
+| Refinement | Applies to | Effect |
+| --- | --- | --- |
+| `Range(min, max)` | Slider | Bounds the value. Defaults to 0..1. |
+| `Step(size)` | Slider | Quantises, so a player lands on 0.75 not 0.7431. |
+| `ShowsPercent()` | Slider | Reads a 0..1 value out as a whole percentage. |
+| `ShowsValue(fn)` | Slider | Any other readout: units, counts, a word. |
+| `AdvancedOnly()` | any | Hides the entry from the Simple view. |
+| `ShownWhen(pred)` | any | Runtime visibility, evaluated against the settings object. |
+| `Pinned(pin)` | any | Holds the entry outside the scrolling region. |
+
+Refinements are not a style preference. Adding a parameter to an existing
+public method is a binary-breaking change in C#: a caller bakes the whole
+argument list into its IL, so a consumer compiled against the older Spine
 throws `MissingMethodException` against the newer assembly even though its
-source would still compile. New capability arrives as a new method or a new
-refinement, never as a new parameter on an existing signature.
+source would still compile unchanged. That has already broken every mod built
+on Spine once. New capability therefore arrives as a new method or a new
+refinement, never as a new parameter on a signature that already shipped.
 
 `SpineApi.Patching` is the single public entry point for guarded patch
 installation. `CreateInstaller` owns one consumer-ID Harmony instance,

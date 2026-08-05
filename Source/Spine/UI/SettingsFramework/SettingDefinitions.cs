@@ -51,27 +51,28 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>
-        /// A float dragged between <paramref name="min"/> and
-        /// <paramref name="max"/>. The bound field must be a float.
+        /// A float dragged along a range. The bound field must be a float.
+        /// Defaults to 0..1 with a two-decimal readout; use
+        /// <see cref="SettingRefinements.Range"/>,
+        /// <see cref="SettingRefinements.Step"/>, and
+        /// <see cref="SettingRefinements.ShowsPercent"/> to shape it.
         /// </summary>
         /// <remarks>
-        /// New factory rather than a parameter on an existing one: see the note
-        /// on <see cref="SettingRefinements"/>. Anything this one later needs
-        /// goes in a refinement, not in this signature.
+        /// The parameters here deliberately mirror <see cref="Toggle"/>, so the
+        /// leading arguments mean the same thing in every factory and a reader
+        /// never has to check which one they are looking at. Everything a
+        /// slider alone needs is a refinement instead, because a bare
+        /// <c>0.35f, 1f</c> in the middle of a call tells a reader nothing.
         /// </remarks>
         public static SettingDefinition Slider(
             string id,
             string fieldName,
-            float min,
-            float max,
             string label,
             string labelKey = null,
             string tooltip = null,
             string tooltipKey = null,
             string parentId = null,
             bool simple = true,
-            float step = 0f,
-            Func<float, string> valueFormatter = null,
             string scribeKey = null,
             Action<object> onChanged = null)
         {
@@ -86,10 +87,6 @@ namespace Spine.UI.SettingsFramework
             definition.ScribeKey = scribeKey;
             definition.ParentId = parentId;
             definition.ShowInSimpleView = simple;
-            definition.SliderMin = min;
-            definition.SliderMax = max;
-            definition.SliderStep = step;
-            definition.SliderValueFormatter = valueFormatter;
             definition.OnChanged = onChanged;
             return definition;
         }
@@ -378,6 +375,70 @@ namespace Spine.UI.SettingsFramework
             if (definition != null)
             {
                 definition.ShowInSimpleView = false;
+            }
+
+            return definition;
+        }
+
+        /// <summary>
+        /// Bounds a slider. A reversed pair is treated as the range the caller
+        /// meant rather than as an empty one, because an unusable slider is a
+        /// worse outcome than a silently reordered pair.
+        /// </summary>
+        public static SettingDefinition Range(
+            this SettingDefinition definition,
+            float min,
+            float max)
+        {
+            if (definition != null)
+            {
+                definition.SliderMin = Mathf.Min(min, max);
+                definition.SliderMax = Mathf.Max(min, max);
+            }
+
+            return definition;
+        }
+
+        /// <summary>
+        /// Quantises a slider to multiples of <paramref name="step"/>, so a
+        /// player lands on 0.75 rather than 0.7431. Zero or less leaves it
+        /// continuous.
+        /// </summary>
+        public static SettingDefinition Step(
+            this SettingDefinition definition,
+            float step)
+        {
+            if (definition != null)
+            {
+                definition.SliderStep = step;
+            }
+
+            return definition;
+        }
+
+        /// <summary>
+        /// Reads a slider out as a whole percentage. Intended for a normalised
+        /// 0..1 range; on any other range the number shown will not match the
+        /// value stored.
+        /// </summary>
+        public static SettingDefinition ShowsPercent(
+            this SettingDefinition definition)
+        {
+            return definition.ShowsValue(
+                value => Mathf.RoundToInt(value * 100f) + "%");
+        }
+
+        /// <summary>
+        /// Replaces the numeric readout beside a slider. Use for units, counts,
+        /// or a word standing in for a band of values.
+        /// </summary>
+        public static SettingDefinition ShowsValue(
+            this SettingDefinition definition,
+            Func<float, string> formatter)
+        {
+            if (definition != null)
+            {
+                definition.SliderValueFormatter = formatter;
             }
 
             return definition;
