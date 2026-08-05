@@ -38,7 +38,8 @@ namespace Spine.UI.SettingsFramework
             bool simple = true,
             bool controlsChildren = false,
             string scribeKey = null,
-            Action<object> onChanged = null)
+            Action<object> onChanged = null,
+            Func<object, bool> visibleWhen = null)
         {
             SettingDefinition definition = Base(
                 id,
@@ -53,6 +54,7 @@ namespace Spine.UI.SettingsFramework
             definition.ShowInSimpleView = simple;
             definition.ControlsChildVisibility = controlsChildren;
             definition.OnChanged = onChanged;
+            definition.VisibleWhen = visibleWhen;
             return definition;
         }
 
@@ -94,7 +96,8 @@ namespace Spine.UI.SettingsFramework
             string labelKey = null,
             string tooltipKey = null,
             string scribeKey = null,
-            bool simple = true)
+            bool simple = true,
+            Func<object, bool> visibleWhen = null)
         {
             SettingDefinition definition = Base(
                 id,
@@ -105,6 +108,7 @@ namespace Spine.UI.SettingsFramework
             definition.FieldName = fieldName;
             definition.ScribeKey = scribeKey;
             definition.ShowInSimpleView = simple;
+            definition.VisibleWhen = visibleWhen;
             return definition;
         }
 
@@ -114,7 +118,8 @@ namespace Spine.UI.SettingsFramework
             Action<object> action,
             string labelKey = null,
             string tooltipKey = null,
-            bool simple = true)
+            bool simple = true,
+            Func<object, bool> visibleWhen = null)
         {
             SettingDefinition definition = Base(
                 id,
@@ -124,6 +129,7 @@ namespace Spine.UI.SettingsFramework
                 tooltipKey: tooltipKey);
             definition.OnChanged = action;
             definition.ShowInSimpleView = simple;
+            definition.VisibleWhen = visibleWhen;
             return definition;
         }
 
