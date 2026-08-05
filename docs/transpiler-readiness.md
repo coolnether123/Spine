@@ -86,12 +86,19 @@ Three verified gaps are what make the cooperative case unproven:
    `try`/`catch`/`finally` — a large share of interesting RimWorld methods — is
    never stack-checked.
 
-3. **A critical validation failure does not abort the patch in the default
-   profile.** At `FluentTranspiler.cs:2389` the throw requires
-   `strict || (hasCriticalWarning && TranspilerSafetyPolicy.FailFastOnCritical)`.
-   Otherwise control reaches `MMLog.WriteError(message)` and then
-   `return _matcher.Instructions().ToList();` at `FluentTranspiler.cs:2405` —
-   the IL that failed validation is returned to Harmony anyway.
+3. ~~A critical validation failure does not abort the patch.~~ **Withdrawn —
+   this was wrong.** `HarmonyCompat.cs` hardcodes
+   `ModPrefs.TranspilerFailFastCritical => true`, so the throw at
+   `FluentTranspiler.cs:2389` does fire on a critical finding and IL that failed
+   validation is never handed to Harmony. The same file also hardcodes
+   `TranspilerSafeMode` and `TranspilerForcePreserveInstructionCount` to true,
+   so replacements preserve instruction count by default and branch targets
+   pointing into a replaced span stay valid. The defaults are materially safer
+   than an earlier pass concluded; that pass had not read `HarmonyCompat.cs`.
+
+   The residual cost is that the abort is a throw out of `Execute`, which has no
+   try/catch, so it propagates into Harmony and fails the consumer's whole patch
+   class rather than just the one edit. That is loud and safe, but coarse.
 
 There is also no automated test covering two independent transpilers applied to
 one target method. Each fixture patches a distinct target and unpatches before
@@ -111,14 +118,15 @@ patch site.
 
 ## What would make it advertisable
 
-Produce `AlreadyPatched` where a cross-mod conflict is detectable; stop
-returning IL that failed stack validation; stop skipping validation on
-exception-handler methods; and land a fixture that applies two independent
-transpilers to one target and asserts the second one's behaviour.
+Produce `AlreadyPatched` where a cross-mod conflict is detectable; stop skipping
+stack validation on exception-handler methods; and land a fixture that applies
+two independent transpilers to one target and asserts the second one's
+behaviour.
 
-None of that is required for the Spine 1.0 release, because the transpiler is
-not in the Workshop package. It is the prerequisite for making a public claim
-about cooperative transpiling later.
+None of that blocks the Spine 1.0 release. The subsystem ships, but no public
+claim is made about cooperative transpiling, and a single-mod consumer is not
+affected by any of the three gaps. They are the prerequisites for making that
+claim later, not for shipping now.
 
 ## Correction to an earlier review
 

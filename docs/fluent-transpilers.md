@@ -125,10 +125,13 @@ These are real and worth designing around:
 
 - **Exception-handler methods skip stack validation entirely.** Any target
   containing `try`/`catch`/`finally` is not stack-checked.
-- **A critical validation failure does not abort in the default profile.** It is
-  logged, and the instruction stream is returned to Harmony regardless. Set the
-  strict profile, or `TranspilerSafetyPolicy.FailFastOnCritical`, to turn that
-  into a throw during development.
+- **A critical validation failure aborts loudly, but coarsely.**
+  `TranspilerFailFastCritical` is enabled by default, so a critical finding
+  throws rather than handing suspect IL to Harmony. That throw escapes
+  `FluentTranspiler.Execute`, which has no try/catch of its own, so it fails the
+  consumer's entire patch class rather than the single edit. Use
+  `FluentTranspilerExecution.ExecuteOrOriginal` when a patch needs to degrade
+  instead of taking its siblings down.
 - **Cooperative transpiling is unproven.** No automated test covers two
   independent mods transpiling one target method, and `AlreadyPatched` is never
   raised, so a cross-mod collision surfaces as a silent `NoMatch` rather than a
