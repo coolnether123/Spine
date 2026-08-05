@@ -757,6 +757,29 @@ namespace Spine.UI.SettingsFramework
                         }
                     }
                     break;
+                case SettingType.Slider:
+                    if (field != null && field.FieldType == typeof(float))
+                    {
+                        float floatValue = (float)field.GetValue(settingsObject);
+                        string readout = def.SliderValueFormatter != null
+                            ? def.SliderValueFormatter(floatValue)
+                            : null;
+                        if (SettingWidgets.DrawSlider(
+                                contentRect,
+                                label,
+                                ref floatValue,
+                                def.SliderMin,
+                                def.SliderMax,
+                                readout,
+                                tooltip,
+                                disabled,
+                                def.SliderStep))
+                        {
+                            field.SetValue(settingsObject, floatValue);
+                            HandleSettingChanged(def, settingsObject, onSettingsChanged);
+                        }
+                    }
+                    break;
                 case SettingType.Color:
                     if (field != null && field.FieldType == typeof(Color))
                     {
@@ -1487,6 +1510,7 @@ namespace Spine.UI.SettingsFramework
                 case SettingType.Bool:
                 case SettingType.Color:
                 case SettingType.Enum:
+                case SettingType.Slider:
                     return true;
                 default:
                     return false;

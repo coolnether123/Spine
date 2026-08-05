@@ -23,6 +23,9 @@ namespace Spine.UI.SettingsFramework
         Header,
 
         /// <summary>Custom immediate-mode row supplied by a setting definition.</summary>
-        Custom
+        Custom,
+
+        /// <summary>Continuous float value dragged between a minimum and maximum.</summary>
+        Slider
     }
 }

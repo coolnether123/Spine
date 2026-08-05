@@ -142,14 +142,7 @@ namespace Spine.UI.SettingsFramework
         public bool ShowInSimpleView;
 
         /// <summary>
-        /// If true, the setting is visible in the Advanced view even when it is
-        /// hidden from Simple. Defaults to true.
-        /// <para>
-        /// Advanced is a superset of Simple: anything with
-        /// <see cref="ShowInSimpleView"/> set also appears in Advanced,
-        /// regardless of this flag. Clearing this flag alone hides a setting
-        /// from both views.
-        /// </para>
+        /// If true, the setting is visible in the Advanced view. Defaults to true.
         /// </summary>
         public bool ShowInAdvancedView = true;
 
@@ -186,6 +179,25 @@ namespace Spine.UI.SettingsFramework
         /// page can never pin away the list it belongs to.
         /// </summary>
         public SettingPin Pin = SettingPin.None;
+
+        /// <summary>Lowest value a slider setting can take.</summary>
+        public float SliderMin;
+
+        /// <summary>Highest value a slider setting can take.</summary>
+        public float SliderMax = 1f;
+
+        /// <summary>
+        /// Quantises a slider to multiples of this value. Zero leaves it
+        /// continuous. Use it when the underlying value has a meaningful
+        /// granularity, so a player cannot land on 0.7431.
+        /// </summary>
+        public float SliderStep;
+
+        /// <summary>
+        /// Renders the numeric readout beside a slider. Null shows two decimal
+        /// places. Supply one to show a percentage, a tick count, or a word.
+        /// </summary>
+        public Func<float, string> SliderValueFormatter;
 
     }
 }

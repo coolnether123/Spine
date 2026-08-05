@@ -73,6 +73,88 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>
+        /// Draws a labelled slider with a numeric readout. Returns true only on
+        /// the frames where the value actually moved, so a caller can persist
+        /// on change without writing every frame of a drag.
+        /// </summary>
+        public static bool DrawSlider(
+            Rect rect,
+            string label,
+            ref float value,
+            float min,
+            float max,
+            string valueLabel = null,
+            string tooltip = null,
+            bool disabled = false,
+            float step = 0f)
+        {
+            const float ReadoutWidth = 54f;
+            const float SliderHeight = 18f;
+
+            Rect labelRect = rect.LeftPart(0.5f);
+            Rect rightRect = rect.RightPart(0.48f);
+            Rect readoutRect = new Rect(
+                rightRect.xMax - ReadoutWidth,
+                rect.y,
+                ReadoutWidth,
+                rect.height);
+            Rect sliderRect = new Rect(
+                rightRect.x,
+                rect.y + (rect.height - SliderHeight) * 0.5f,
+                Mathf.Max(24f, rightRect.width - ReadoutWidth - 6f),
+                SliderHeight);
+
+            Widgets.Label(labelRect, label);
+
+            TextAnchor previousAnchor = Text.Anchor;
+            Text.Anchor = TextAnchor.MiddleRight;
+            Widgets.Label(
+                readoutRect,
+                valueLabel ?? value.ToString("0.00"));
+            Text.Anchor = previousAnchor;
+
+            bool previousEnabled = GUI.enabled;
+            Color previousColor = GUI.color;
+            if (disabled)
+            {
+                GUI.enabled = false;
+                GUI.color = Color.gray;
+            }
+
+            float updated = Widgets.HorizontalSlider(sliderRect, value, min, max);
+
+            if (disabled)
+            {
+                GUI.enabled = previousEnabled;
+                GUI.color = previousColor;
+            }
+
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                TooltipHandler.TipRegion(rect, tooltip);
+            }
+
+            if (disabled)
+            {
+                return false;
+            }
+
+            if (step > 0f)
+            {
+                updated = Mathf.Round(updated / step) * step;
+            }
+
+            updated = Mathf.Clamp(updated, min, max);
+            if (Mathf.Abs(updated - value) < 0.0001f)
+            {
+                return false;
+            }
+
+            value = updated;
+            return true;
+        }
+
+        /// <summary>
         /// Draws an enum dropdown button.
         /// </summary>
         public static void DrawEnum(

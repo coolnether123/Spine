@@ -50,6 +50,50 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
+        /// <summary>
+        /// A float dragged between <paramref name="min"/> and
+        /// <paramref name="max"/>. The bound field must be a float.
+        /// </summary>
+        /// <remarks>
+        /// New factory rather than a parameter on an existing one: see the note
+        /// on <see cref="SettingRefinements"/>. Anything this one later needs
+        /// goes in a refinement, not in this signature.
+        /// </remarks>
+        public static SettingDefinition Slider(
+            string id,
+            string fieldName,
+            float min,
+            float max,
+            string label,
+            string labelKey = null,
+            string tooltip = null,
+            string tooltipKey = null,
+            string parentId = null,
+            bool simple = true,
+            float step = 0f,
+            Func<float, string> valueFormatter = null,
+            string scribeKey = null,
+            Action<object> onChanged = null)
+        {
+            SettingDefinition definition = Base(
+                id,
+                SettingType.Slider,
+                label,
+                labelKey,
+                tooltip,
+                tooltipKey);
+            definition.FieldName = fieldName;
+            definition.ScribeKey = scribeKey;
+            definition.ParentId = parentId;
+            definition.ShowInSimpleView = simple;
+            definition.SliderMin = min;
+            definition.SliderMax = max;
+            definition.SliderStep = step;
+            definition.SliderValueFormatter = valueFormatter;
+            definition.OnChanged = onChanged;
+            return definition;
+        }
+
         public static SettingDefinition Enum(
             string id,
             string fieldName,
@@ -256,7 +300,8 @@ namespace Spine.UI.SettingsFramework
             return type == SettingType.Bool ||
                 type == SettingType.Color ||
                 type == SettingType.Enum ||
-                type == SettingType.Button;
+                type == SettingType.Button ||
+                type == SettingType.Slider;
         }
 
         private static SettingDefinition Base(
