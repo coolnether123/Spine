@@ -17,7 +17,7 @@
   <loadAfter>
     <li>brrainz.harmony</li>
   </loadAfter>
-  <description>The shared library the rest of my mods are built on. It does nothing by itself - install it because another mod asks for it.
+  <description>The shared library the rest of my mods are built on, published as SpineLib. It does nothing by itself - install it because another mod asks for it.
 
 - Alt-click a SpineLib mod's buttons, commands and labels to open its settings with the matching option already highlighted
 - Every CoolNether123 mod built on SpineLib supports that, and always will
@@ -27,5 +27,5 @@
 
 Any modder can build on SpineLib and get the same behaviour in their own mod.
 
-Requires Harmony. Load SpineLib before anything that depends on it.</description>
+Requires Harmony. Load SpineLib before anything that depends on it. The package ID and internal API identifiers remain CoolNether123.Spine for compatibility.</description>
 </ModMetaData>

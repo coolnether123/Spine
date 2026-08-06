@@ -1,6 +1,8 @@
 # SpineLib
 
-SpineLib is the feature-neutral runtime shared by CoolNether123 RimWorld mods.
+SpineLib is the public name of the feature-neutral runtime shared by CoolNether123
+RimWorld mods. Its package ID, assemblies, namespaces, and API identifiers remain
+`Spine` for compatibility with existing consumers.
 It provides settings pages, contextual settings navigation, guarded Harmony
 installation, opt-in tooltip stabilization, and bounded caching. SpineLib does not add
 player-facing gameplay by itself.
@@ -25,7 +27,7 @@ never asks for it pays nothing.
 ## Install
 Install Harmony first, then copy the `Spine` folder into RimWorld's `Mods`
 directory and load SpineLib before any mod that declares `CoolNether123.Spine` as
-a dependency.
+a dependency. The folder and dependency ID intentionally remain `Spine`.
 
 Never copy `Spine.dll` into a consumer mod. Two copies of the same types loaded
 at once is precisely the situation a shared runtime exists to prevent.
