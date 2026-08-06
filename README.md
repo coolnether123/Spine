@@ -5,8 +5,24 @@ It provides settings pages, contextual settings navigation, guarded Harmony
 installation, opt-in tooltip stabilization, and bounded caching. Spine does not add
 player-facing gameplay by itself.
 
-## Install
+## Alt-click to settings
 
+Every setting a Spine mod exposes is reachable from the thing it affects.
+Alt-click a mod's button, command or label and Spine opens that mod's settings
+page with the matching option highlighted, rather than leaving you to hunt
+through a list for it.
+
+This is a guarantee, not a feature that comes and goes: every CoolNether123 mod
+built on Spine supports it, and new ones are expected to. The dev-mode settings
+audit exists partly to keep that true.
+
+Any other modder can have the same behaviour. Bind a visible rectangle to a
+setting id through the `ContextualSettings` capability and Spine owns the rest -
+Alt-left-click detection, overlap arbitration between competing rectangles,
+event consumption, opening the window, scrolling to the row and highlighting
+it. The input hook only exists while a consumer holds a lease, so a mod that
+never asks for it pays nothing.
+## Install
 Install Harmony first, then copy the `Spine` folder into RimWorld's `Mods`
 directory and load Spine before any mod that declares `CoolNether123.Spine` as
 a dependency.
