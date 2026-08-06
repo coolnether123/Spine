@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <name>Spine</name>
+  <name>SpineLib</name>
   <author>CoolNether123</author>
   <packageId>CoolNether123.Spine</packageId>
   <modVersion>1.0.0</modVersion>
@@ -19,13 +19,13 @@
   </loadAfter>
   <description>The shared library the rest of my mods are built on. It does nothing by itself - install it because another mod asks for it.
 
-- Alt-click a Spine mod's buttons, commands and labels to open its settings with the matching option already highlighted
-- Every CoolNether123 mod built on Spine supports that, and always will
+- Alt-click a SpineLib mod's buttons, commands and labels to open its settings with the matching option already highlighted
+- Every CoolNether123 mod built on SpineLib supports that, and always will
 - Consistent settings pages with search and a Simple/Advanced split
 - Stable tooltips and bounded caching
 - Guarded Harmony patch installation, attributed to the mod that asked for it
 
-Any modder can build on Spine and get the same behaviour in their own mod.
+Any modder can build on SpineLib and get the same behaviour in their own mod.
 
-Requires Harmony. Load Spine before anything that depends on it.</description>
+Requires Harmony. Load SpineLib before anything that depends on it.</description>
 </ModMetaData>
