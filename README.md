@@ -1,42 +1,42 @@
-# Spine
+# SpineLib
 
-Spine is the feature-neutral runtime shared by CoolNether123 RimWorld mods.
+SpineLib is the feature-neutral runtime shared by CoolNether123 RimWorld mods.
 It provides settings pages, contextual settings navigation, guarded Harmony
-installation, opt-in tooltip stabilization, and bounded caching. Spine does not add
+installation, opt-in tooltip stabilization, and bounded caching. SpineLib does not add
 player-facing gameplay by itself.
 
 ## Alt-click to settings
 
 Every setting a Spine mod exposes is reachable from the thing it affects.
-Alt-click a mod's button, command or label and Spine opens that mod's settings
+Alt-click a mod's button, command or label and SpineLib opens that mod's settings
 page with the matching option highlighted, rather than leaving you to hunt
 through a list for it.
 
 This is a guarantee, not a feature that comes and goes: every CoolNether123 mod
-built on Spine supports it, and new ones are expected to. The dev-mode settings
+built on SpineLib supports it, and new ones are expected to. The dev-mode settings
 audit exists partly to keep that true.
 
 Any other modder can have the same behaviour. Bind a visible rectangle to a
-setting id through the `ContextualSettings` capability and Spine owns the rest -
+setting id through the `ContextualSettings` capability and SpineLib owns the rest -
 Alt-left-click detection, overlap arbitration between competing rectangles,
 event consumption, opening the window, scrolling to the row and highlighting
 it. The input hook only exists while a consumer holds a lease, so a mod that
 never asks for it pays nothing.
 ## Install
 Install Harmony first, then copy the `Spine` folder into RimWorld's `Mods`
-directory and load Spine before any mod that declares `CoolNether123.Spine` as
+directory and load SpineLib before any mod that declares `CoolNether123.Spine` as
 a dependency.
 
 Never copy `Spine.dll` into a consumer mod. Two copies of the same types loaded
 at once is precisely the situation a shared runtime exists to prevent.
 
-Spine is not on the Steam Workshop yet; take a build from this repository. Each
+SpineLib is available on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3778463813). Each
 consumer mod stays independently selectable and depends on no other gameplay
 mod.
 
 ## Consumer rules
 
-- Enter Spine through its runtime and capability facades. Do not bind to
+- Enter SpineLib through its runtime and capability facades. Do not bind to
   implementation types or infer support from an assembly version.
 - Request only the capabilities the consumer actually uses. Pass the
   consumer's own ownership identity, including its `Harmony` instance for
@@ -58,7 +58,7 @@ in [`docs/contextual-settings.md`](docs/contextual-settings.md).
 The final 1.6 checks are recorded in
 [`docs/verification.md`](docs/verification.md).
 
-Spine remains version 1.0 while it is under active pre-release development.
+SpineLib remains version 1.0 while it is under active pre-release development.
 Consumers negotiate exact capabilities instead of inferring features from
 incremented development version numbers.
 
@@ -104,7 +104,7 @@ and draw lifecycle without owning any setting's gameplay meaning.
 
 Spine also advertises the versioned `ContextualSettings` capability. Consumers
 bind a visible rectangle to an exact setting, settings group, or mod root.
-Spine owns Alt-left-click detection, overlap arbitration, event consumption,
+SpineLib owns Alt-left-click detection, overlap arbitration, event consumption,
 deferred settings-window opening, normal-page scrolling, and highlighting. It
 does not filter the page or add Alt-click hints to gameplay tooltips. Its input
 hook exists only while a consumer holds a lease. The settings facade also hides
@@ -198,7 +198,7 @@ the narrowest required installation.
 
 ## Release payload
 
-The public Spine mod contains the runtime metadata, languages, documentation,
+The public SpineLib mod contains the runtime metadata, languages, documentation,
 and the assemblies named in the release
 allowlist. Stage those paths through RimWorld-Tooling's explicit release
 allowlist; never upload the repository as the package. `Source/`, `Tests/`,
