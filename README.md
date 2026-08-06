@@ -7,7 +7,7 @@ player-facing gameplay by itself.
 
 ## Alt-click to settings
 
-Every setting a Spine mod exposes is reachable from the thing it affects.
+Every setting a SpineLib mod exposes is reachable from the thing it affects.
 Alt-click a mod's button, command or label and SpineLib opens that mod's settings
 page with the matching option highlighted, rather than leaving you to hunt
 through a list for it.
@@ -102,7 +102,7 @@ The lower-level `ModSettingsPages` facade remains available for unusual hosts.
 It owns the localized drawer, adaptive page chrome, contextual settings lease,
 and draw lifecycle without owning any setting's gameplay meaning.
 
-Spine also advertises the versioned `ContextualSettings` capability. Consumers
+SpineLib also advertises the versioned `ContextualSettings` capability. Consumers
 bind a visible rectangle to an exact setting, settings group, or mod root.
 SpineLib owns Alt-left-click detection, overlap arbitration, event consumption,
 deferred settings-window opening, normal-page scrolling, and highlighting. It
@@ -184,7 +184,7 @@ Available refinements, all in `SettingRefinements`, all chainable in any order:
 
 Refinements are not a style preference. Adding a parameter to an existing
 public method is a binary-breaking change in C#: a caller bakes the whole
-argument list into its IL, so a consumer compiled against the older Spine
+argument list into its IL, so a consumer compiled against the older SpineLib
 throws `MissingMethodException` against the newer assembly even though its
 source would still compile unchanged. That has already broken every mod built
 on Spine once. New capability therefore arrives as a new method or a new
@@ -203,4 +203,4 @@ and the assemblies named in the release
 allowlist. Stage those paths through RimWorld-Tooling's explicit release
 allowlist; never upload the repository as the package. `Source/`, `Tests/`,
 `Engineering/`, symbols, build logs, and intermediate outputs are development
-material and are not part of the public Spine runtime.
+material and are not part of the public SpineLib runtime.
