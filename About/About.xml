@@ -17,7 +17,12 @@
   <loadAfter>
     <li>brrainz.harmony</li>
   </loadAfter>
-  <description>The shared foundation for CoolNether123 RimWorld mods.
+  <description>The shared library the rest of my mods are built on. It does nothing by itself - install it because another mod asks for it.
 
-Spine provides consistent settings pages, Alt-click settings navigation, stable tooltips, bounded caching, and cooperative Harmony patch installation. It performs no gameplay work on its own and activates optional services only when a consumer requests them.</description>
+- Consistent settings pages with search and a Simple/Advanced split
+- Alt-click a mod's own controls to jump straight to the setting behind them
+- Stable tooltips and bounded caching
+- Guarded Harmony patch installation, attributed to the mod that asked for it
+
+Requires Harmony. Load Spine before anything that depends on it.</description>
 </ModMetaData>
