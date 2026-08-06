@@ -228,16 +228,36 @@ namespace Spine.UI.SettingsFramework
         /// setting with nothing to read when they hover it, and a translation key
         /// that will not resolve at runtime.
         /// Runs once per settings type and only under dev mode, so a shipped game
-        /// pays nothing and players never see it. Prepare is reached lazily, after
-        /// language data has loaded, which is what makes the key check meaningful.
+        /// pays nothing and players never see it.
         /// </summary>
+        /// <remarks>
+        /// This used to assume Prepare was only reached after language data had
+        /// loaded. It is not: Prepare also runs from the scribe path, which
+        /// RimWorld executes while constructing mods, before LanguageDatabase has
+        /// an active language. CanTranslate dereferences that language, so the
+        /// audit threw a NullReferenceException straight out of ExposeData and
+        /// took the entire settings load with it - every setting silently
+        /// reverted to its default on every launch, for every consumer, whenever
+        /// dev mode was on. The language check below is load-bearing, not
+        /// defensive.
+        /// </remarks>
         private static void ValidatePresentation(
             Type settingsType,
             IReadOnlyList<SettingDefinition> definitions)
         {
-            if (settingsType == null ||
-                !Prefs.DevMode ||
-                !AuditedSettingsTypes.Add(settingsType.FullName))
+            if (settingsType == null || !Prefs.DevMode)
+            {
+                return;
+            }
+
+            // Bail before claiming the audit slot, so the audit still runs once
+            // the settings page draws and the keys can actually be resolved.
+            if (LanguageDatabase.activeLanguage == null)
+            {
+                return;
+            }
+
+            if (!AuditedSettingsTypes.Add(settingsType.FullName))
             {
                 return;
             }
