@@ -187,7 +187,7 @@ public method is a binary-breaking change in C#: a caller bakes the whole
 argument list into its IL, so a consumer compiled against the older SpineLib
 throws `MissingMethodException` against the newer assembly even though its
 source would still compile unchanged. That has already broken every mod built
-on Spine once. New capability therefore arrives as a new method or a new
+on SpineLib once. New capability therefore arrives as a new method or a new
 refinement, never as a new parameter on a signature that already shipped.
 
 `SpineApi.Patching` is the single public entry point for guarded patch
