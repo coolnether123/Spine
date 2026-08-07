@@ -10,8 +10,53 @@
     <RwtUseUnityImGui>true</RwtUseUnityImGui>
     <RwtUseUnityInputLegacy>true</RwtUseUnityInputLegacy>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '1.6' Or '$(Configuration)' == '1.5'">
+    <DefineConstants>TRACE;RWT_HAS_DIALOG_MOD_SETTINGS_MOD_CTOR;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_CLICK_OUTSIDE;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_HAS_WARNING_ONCE;RWT_DRAW_LINE_COLOR;RWT_FLOATMENU_DOGUI_CONTEXT</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '1.4'">
+    <DefineConstants>TRACE;RWT_HAS_DIALOG_MOD_SETTINGS_MOD_CTOR;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_CLICK_OUTSIDE;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_HAS_WARNING_ONCE;RWT_FLOATMENU_DOGUI_CONTEXT</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '1.3'">
+    <DefineConstants>TRACE;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_CLICK_OUTSIDE;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_FLOATMENU_DOGUI_CONTEXT</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '1.2' Or '$(Configuration)' == '1.1' Or '$(Configuration)' == '1.0'">
+    <DefineConstants>TRACE;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_FLOATMENU_DOGUI_CONTEXT</DefineConstants>
+    <RwtUseUnityImGui Condition="'$(Configuration)' == '1.0'">false</RwtUseUnityImGui>
+    <RwtUseUnityInputLegacy Condition="'$(Configuration)' == '1.0'">false</RwtUseUnityInputLegacy>
+    <RwtUseLegacyUnityAssembly Condition="'$(Configuration)' == '1.0'">true</RwtUseLegacyUnityAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '0.19'">
+    <DefineConstants>TRACE;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_FLOATMENU_DOGUI_CONTEXT</DefineConstants>
+    <RwtUseUnityImGui>false</RwtUseUnityImGui>
+    <RwtUseUnityInputLegacy>false</RwtUseUnityInputLegacy>
+    <RwtUseLegacyUnityAssembly>true</RwtUseLegacyUnityAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '0.17' Or '$(Configuration)' == '0.18'">
+    <DefineConstants>TRACE;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT</DefineConstants>
+    <RwtUseUnityImGui>false</RwtUseUnityImGui>
+    <RwtUseUnityInputLegacy>false</RwtUseUnityInputLegacy>
+    <RwtUseLegacyUnityAssembly>true</RwtUseLegacyUnityAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '0.16' Or '$(Configuration)' == '0.15' Or '$(Configuration)' == '0.14' Or '$(Configuration)' == '0.13' Or '$(Configuration)' == 'Alpha4'">
+    <DefineConstants Condition="'$(Configuration)' == 'Alpha4'">TRACE;RWT_LEGACY_BOOTSTRAP;RWT_RIMWORLD_ALPHA4</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)' != 'Alpha4'">TRACE;RWT_LEGACY_BOOTSTRAP</DefineConstants>
+    <RwtUseUnityImGui>false</RwtUseUnityImGui>
+    <RwtUseUnityInputLegacy>false</RwtUseUnityInputLegacy>
+    <RwtUseLegacyUnityAssembly>true</RwtUseLegacyUnityAssembly>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(RwtUseLegacyUnityAssembly)' == 'true'">
+    <Reference Include="UnityEngine">
+      <HintPath>$(RimWorldManagedDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
     <Compile Remove="Spine\harmony\HarmonyCompat.cs" />
     <Compile Remove="Spine\harmony\Transpilers\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == '0.16' Or '$(Configuration)' == '0.15' Or '$(Configuration)' == '0.14' Or '$(Configuration)' == '0.13' Or '$(Configuration)' == 'Alpha4'">
+    <Compile Remove="**\*.cs" />
+    <Compile Include="Legacy\SpineLegacyBootstrap.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
 </Project>

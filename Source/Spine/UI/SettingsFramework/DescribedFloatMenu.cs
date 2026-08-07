@@ -145,7 +145,11 @@ namespace Spine.UI.SettingsFramework
                     GUI.color = oldColor;
                 }
 
+#if RWT_FLOATMENU_DOGUI_CONTEXT
                 if (option.DoGUI(rowRect, givesColonistOrders, this))
+#else
+                if (option.DoGUI(rowRect, givesColonistOrders))
+#endif
                 {
                     Find.WindowStack.TryRemove(this);
                     if (useScrollbar)
@@ -194,7 +198,14 @@ namespace Spine.UI.SettingsFramework
             Widgets.Label(new Rect(content.x, content.y, content.width, titleHeight), settingLabel);
             float y = content.y + titleHeight + 10f;
 
+#if RWT_DRAW_LINE_COLOR
             Widgets.DrawLineHorizontal(content.x, y, content.width, SelectionColor);
+#else
+            Color previousColor = GUI.color;
+            GUI.color = SelectionColor;
+            Widgets.DrawLineHorizontal(content.x, y, content.width);
+            GUI.color = previousColor;
+#endif
             y += 13f;
 
             if (focusedOption != null)

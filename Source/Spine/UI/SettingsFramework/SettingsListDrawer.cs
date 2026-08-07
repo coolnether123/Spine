@@ -23,7 +23,7 @@ namespace Spine.UI.SettingsFramework
         private readonly SettingsHierarchy _hierarchy;
         private Vector2 _scrollPosition;
         private string _searchQuery = string.Empty;
-        private readonly QuickSearchWidget _searchWidget = new QuickSearchWidget();
+        private readonly SettingsSearchWidget _searchWidget = new SettingsSearchWidget();
         private SettingsFilterDefinition _activeFilter;
         private string _pendingFocusSettingId;
         private string _highlightedSettingId;
@@ -1665,5 +1665,38 @@ namespace Spine.UI.SettingsFramework
                 return new EmptyStateAction(label, viewMode);
             }
         }
+    }
+
+    /// <summary>
+    /// Small local search control so the settings framework does not depend on
+    /// RimWorld's version-specific QuickSearchWidget API.
+    /// </summary>
+    internal sealed class SettingsSearchWidget
+    {
+        internal readonly SettingsSearchFilter filter = new SettingsSearchFilter();
+
+        internal void OnGUI(Rect rect, Action onChanged)
+        {
+            string value = Widgets.TextField(rect, filter.Text ?? string.Empty);
+            if (!string.Equals(value, filter.Text, StringComparison.Ordinal))
+            {
+                filter.Text = value;
+                onChanged?.Invoke();
+            }
+        }
+
+        internal void Reset()
+        {
+            filter.Text = string.Empty;
+        }
+
+        internal void Unfocus()
+        {
+        }
+    }
+
+    internal sealed class SettingsSearchFilter
+    {
+        internal string Text { get; set; } = string.Empty;
     }
 }

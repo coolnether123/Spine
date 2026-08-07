@@ -9,9 +9,20 @@
     <OutputPath>..\1.6\Assemblies\</OutputPath>
     <RwtUseHarmony>true</RwtUseHarmony>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '0.16' Or '$(Configuration)' == '0.15' Or '$(Configuration)' == '0.14' Or '$(Configuration)' == '0.13' Or '$(Configuration)' == 'Alpha4'">
+    <DefineConstants Condition="'$(Configuration)' == 'Alpha4'">TRACE;RWT_LEGACY_BOOTSTRAP;RWT_RIMWORLD_ALPHA4</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)' != 'Alpha4'">TRACE;RWT_LEGACY_BOOTSTRAP</DefineConstants>
+    <RwtUseLegacyUnityAssembly>true</RwtUseLegacyUnityAssembly>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Spine\harmony\HarmonyCompat.cs" />
     <Compile Include="Spine\harmony\HarmonyLog.cs" />
     <Compile Include="Spine\harmony\Transpilers\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == '0.16' Or '$(Configuration)' == '0.15' Or '$(Configuration)' == '0.14' Or '$(Configuration)' == '0.13' Or '$(Configuration)' == 'Alpha4'">
+    <Compile Remove="**\*.cs" />
+    <Compile Include="Legacy\SpineTranspilersLegacyBootstrap.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
 </Project>

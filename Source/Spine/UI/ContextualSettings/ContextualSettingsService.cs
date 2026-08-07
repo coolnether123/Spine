@@ -247,7 +247,16 @@ namespace Spine.UI.ContextualSettings
                 Find.WindowStack.TryRemove(current, false);
             }
 
+#if RWT_HAS_DIALOG_MOD_SETTINGS_MOD_CTOR
             Find.WindowStack.Add(new Dialog_ModSettings(consumer.Mod));
+#else
+            Dialog_ModSettings dialog = new Dialog_ModSettings();
+            if (DialogModField != null)
+            {
+                DialogModField.SetValue(dialog, consumer.Mod);
+            }
+            Find.WindowStack.Add(dialog);
+#endif
         }
 
         private void Release(ConsumerRegistration consumer)
