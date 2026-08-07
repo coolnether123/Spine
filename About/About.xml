@@ -3,7 +3,6 @@
   <name>SpineLib</name>
   <author>CoolNether123</author>
   <packageId>CoolNether123.Spine</packageId>
-  <modVersion>1.0.1</modVersion>
   <supportedVersions>
     <li>0.13</li>
     <li>0.14</li>
