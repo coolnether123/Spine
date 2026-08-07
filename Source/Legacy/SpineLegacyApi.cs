@@ -20,7 +20,7 @@ namespace Spine.Api
             SpineLegacyRuntimeFacade.Instance;
 
         public static Spine.Harmony.IHarmonyPatchingFacade Patching =>
-            SpineLegacyHarmonyFacade.Instance;
+            Spine.Harmony.SpineLegacyHarmonyFacade.Instance;
     }
 
     internal sealed class SpineLegacyRuntimeFacade : ISpineRuntimeFacade
