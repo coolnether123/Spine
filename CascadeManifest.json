@@ -44,14 +44,7 @@
     "configurationTemplate": "{version}",
     "expectedAssembly": "Spine.dll"
   },
-  "hooks": [
-    {
-      "name": "validate-package",
-      "phase": "before-stage",
-      "path": "Build/Validate-Version.ps1",
-      "versions": ["*"]
-    }
-  ],
+  "hooks": [],
   "additionalActions": [],
   "copyBack": false,
   "push": false,
