@@ -1,3 +1,4 @@
+#if RWT_LEGACY_BOOTSTRAP
 using Verse;
 
 namespace Spine.Legacy
@@ -13,3 +14,4 @@ namespace Spine.Legacy
         }
     }
 }
+#endif
