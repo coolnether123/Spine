@@ -10,7 +10,7 @@ namespace Spine.Legacy
     {
         static SpineLegacyBootstrap()
         {
-            Log.Message("[Spine] Loaded legacy compatibility assembly.");
+            Spine.Harmony.SpineLegacyApi.Initialize();
         }
     }
 }
