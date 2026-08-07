@@ -18,8 +18,7 @@
     "0.16",
     "0.15",
     "0.14",
-    "0.13",
-    "Alpha4"
+    "0.13"
   ],
   "payloadRoots": [
     "1.6/Assemblies",
@@ -35,8 +34,7 @@
     "0.16/Assemblies",
     "0.15/Assemblies",
     "0.14/Assemblies",
-    "0.13/Assemblies",
-    "Alpha4/Assemblies"
+    "0.13/Assemblies"
   ],
   "copyBackPaths": [],
   "build": {
