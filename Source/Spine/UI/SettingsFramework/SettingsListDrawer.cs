@@ -17,6 +17,7 @@ namespace Spine.UI.SettingsFramework
         private const float ResetButtonSize = 20f;
         private const float ClearFilterIconSize = 16f;
         private const float ClearFilterIconGap = 6f;
+        private const float FooterHeight = 34f;
         private const float ToolbarGap = 8f;
         private const float FocusHighlightSeconds = 1.45f;
         private const float SearchResultDoubleClickMaxSeconds = 0.25f;
@@ -41,6 +42,7 @@ namespace Spine.UI.SettingsFramework
         private string _lastSearchClickSettingId;
         private float _lastSearchClickTime = -1f;
         private Vector2 _lastSearchClickPosition;
+        private TransferMode _transferMode;
         private readonly HashSet<string> _forceVisibleDisabledAncestorIds =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -142,10 +144,16 @@ namespace Spine.UI.SettingsFramework
         /// </summary>
         public string AllSettingsFilterLabel { get; set; } = "All settings";
 
+        /// <summary>Optional import/export actions shown below the settings list.</summary>
+        public SettingsImportExportActions ImportExportActions { get; set; }
+
         /// <summary>
         /// Optional callback invoked when a row's tooltip is actually hovered.
         /// </summary>
         public Action<SettingDefinition, object> OnSettingTooltipViewed { get; set; }
+
+        /// <summary>Optional callback invoked when the player clicks a settings row.</summary>
+        public Action<SettingDefinition, object> OnSettingInteracted { get; set; }
 
         /// <summary>
         /// Creates a new drawer for a hierarchy.
@@ -253,8 +261,15 @@ namespace Spine.UI.SettingsFramework
                 ClearSearch();
             }
 
-            Rect listRect = new Rect(rect.x, listStartY, rect.width, rect.height - (listStartY - rect.y));
+            bool drawFooter = ImportExportActions?.HasAnyAction == true;
+            float footerSpace = drawFooter ? FooterHeight + 8f : 0f;
+            Rect listRect = new Rect(rect.x, listStartY, rect.width, rect.height - (listStartY - rect.y) - footerSpace);
             DrawSettingsList(listRect, settingsObject, ref viewMode, onSettingsChanged);
+
+            if (drawFooter)
+            {
+                DrawImportExportFooter(new Rect(rect.x, rect.yMax - FooterHeight, rect.width, FooterHeight));
+            }
         }
 
         private void DrawHeader(Rect rect, ref SettingsViewMode viewMode)
@@ -585,6 +600,11 @@ namespace Spine.UI.SettingsFramework
 
                 float rowHeight = MeasureRowHeight(def, settingsObject);
                 Rect rowRect = new Rect(0f, curY, viewRect.width, rowHeight);
+                Event evt = Event.current;
+                if (evt != null && evt.type == EventType.MouseDown && evt.button == 0 && rowRect.Contains(evt.mousePosition))
+                {
+                    OnSettingInteracted?.Invoke(def, settingsObject);
+                }
                 if (isSearching)
                 {
                     TryHandleSearchResultDoubleClick(rowRect, def, settingsObject, viewMode, rect.height);
@@ -1720,6 +1740,61 @@ namespace Spine.UI.SettingsFramework
             }
         }
 
+        private void DrawImportExportFooter(Rect rect)
+        {
+            Widgets.DrawLineHorizontal(rect.x, rect.y, rect.width);
+            Rect contentRect = rect.ContractedBy(2f);
+            contentRect.y += 4f;
+            contentRect.height -= 4f;
+
+            if (_transferMode == TransferMode.None)
+            {
+                const float buttonWidth = 110f;
+                Rect exportRect = new Rect(contentRect.x, contentRect.y, buttonWidth, contentRect.height);
+                Rect importRect = new Rect(exportRect.xMax + 6f, contentRect.y, buttonWidth, contentRect.height);
+                if ((ImportExportActions.ExportToFile != null || ImportExportActions.ExportToClipboard != null) &&
+                    Widgets.ButtonText(exportRect, ImportExportActions.ExportLabel))
+                {
+                    _transferMode = TransferMode.Export;
+                }
+
+                if ((ImportExportActions.ImportFromFile != null || ImportExportActions.ImportFromClipboard != null) &&
+                    Widgets.ButtonText(importRect, ImportExportActions.ImportLabel))
+                {
+                    _transferMode = TransferMode.Import;
+                }
+
+                return;
+            }
+
+            bool exporting = _transferMode == TransferMode.Export;
+            Rect labelRect = new Rect(contentRect.x, contentRect.y + 5f, 80f, contentRect.height);
+            Widgets.Label(labelRect, (exporting ? ImportExportActions.ExportLabel : ImportExportActions.ImportLabel) + ":");
+            const float optionWidth = 110f;
+            Rect fileRect = new Rect(labelRect.xMax + 4f, contentRect.y, optionWidth, contentRect.height);
+            Rect clipboardRect = new Rect(fileRect.xMax + 6f, contentRect.y, optionWidth, contentRect.height);
+            Rect cancelRect = new Rect(clipboardRect.xMax + 6f, contentRect.y, optionWidth, contentRect.height);
+            Action fileAction = exporting ? ImportExportActions.ExportToFile : ImportExportActions.ImportFromFile;
+            Action clipboardAction = exporting ? ImportExportActions.ExportToClipboard : ImportExportActions.ImportFromClipboard;
+
+            if (fileAction != null && Widgets.ButtonText(fileRect, ImportExportActions.FileLabel))
+            {
+                _transferMode = TransferMode.None;
+                fileAction();
+            }
+
+            if (clipboardAction != null && Widgets.ButtonText(clipboardRect, ImportExportActions.ClipboardLabel))
+            {
+                _transferMode = TransferMode.None;
+                clipboardAction();
+            }
+
+            if (Widgets.ButtonText(cancelRect, ImportExportActions.CancelLabel))
+            {
+                _transferMode = TransferMode.None;
+            }
+        }
+
         private bool EnableControllingAncestors(SettingDefinition setting, object settingsObject)
         {
             if (setting == null || settingsObject == null)
@@ -2116,6 +2191,13 @@ namespace Spine.UI.SettingsFramework
         internal void Unfocus()
         {
         }
+    }
+
+    internal enum TransferMode
+    {
+        None,
+        Export,
+        Import
     }
 
     internal sealed class SettingsSearchFilter
