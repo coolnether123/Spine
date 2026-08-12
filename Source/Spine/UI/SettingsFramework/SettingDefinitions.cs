@@ -29,8 +29,7 @@ namespace Spine.UI.SettingsFramework
             }
 
             int uppercasePrefixLength = 1;
-            while (uppercasePrefixLength < fieldName.Length &&
-                   char.IsUpper(fieldName[uppercasePrefixLength]))
+            while (uppercasePrefixLength < fieldName.Length && char.IsUpper(fieldName[uppercasePrefixLength]))
             {
                 uppercasePrefixLength++;
             }
@@ -40,11 +39,8 @@ namespace Spine.UI.SettingsFramework
                 return fieldName.ToLowerInvariant();
             }
 
-            int charactersToLower = uppercasePrefixLength == 1
-                ? 1
-                : uppercasePrefixLength - 1;
-            return fieldName.Substring(0, charactersToLower).ToLowerInvariant() +
-                fieldName.Substring(charactersToLower);
+            int charactersToLower = uppercasePrefixLength == 1 ? 1 : uppercasePrefixLength - 1;
+            return fieldName.Substring(0, charactersToLower).ToLowerInvariant() + fieldName.Substring(charactersToLower);
         }
     }
 
@@ -53,29 +49,21 @@ namespace Spine.UI.SettingsFramework
     /// </summary>
     public sealed class SettingsSchema<TSettings>
     {
-        private readonly List<SettingDefinition> definitions =
-            new List<SettingDefinition>();
+        private readonly List<SettingDefinition> definitions = new List<SettingDefinition>();
         private readonly IReadOnlyList<SettingDefinition> readOnlyDefinitions;
         private readonly Func<string, string> scribeKeyConvention;
         private readonly Action<SettingDefinition> onAdd;
 
-        public SettingsSchema(Func<string, string> scribeKeyConvention = null)
-            : this(scribeKeyConvention, onAdd: null)
+        public SettingsSchema(Func<string, string> scribeKeyConvention = null) : this(scribeKeyConvention, onAdd: null)
         {
         }
 
-        public SettingsSchema(
-            Func<string, string> scribeKeyConvention,
-            Action<SettingDefinition> onAdd)
+        public SettingsSchema(Func<string, string> scribeKeyConvention, Action<SettingDefinition> onAdd)
         {
             this.scribeKeyConvention = scribeKeyConvention;
             this.onAdd = onAdd;
             readOnlyDefinitions = definitions.AsReadOnly();
-            Root = new SettingsScope<TSettings>(
-                definitions,
-                parentId: null,
-                scribeKeyConvention,
-                onAdd);
+            Root = new SettingsScope<TSettings>(definitions, parentId: null, scribeKeyConvention, onAdd);
         }
 
         public IReadOnlyList<SettingDefinition> Definitions => readOnlyDefinitions;
@@ -96,31 +84,25 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Applies registered preference defaults.</summary>
-        public IReadOnlyCollection<string> ApplyPreferenceDefaults(
-            TSettings settings)
+        public IReadOnlyCollection<string> ApplyPreferenceDefaults(TSettings settings)
         {
 #if RWT_EMBEDDED_SPINE_SETTINGS
             return SettingsScribe.ApplyPreferenceDefaults(
 #else
             return Spine.Api.SpineApi.Settings.ApplyPreferenceDefaults(
 #endif
-                settings,
-                readOnlyDefinitions);
+                settings, readOnlyDefinitions);
         }
 
         /// <summary>Runs registered reactions after a bulk preference update.</summary>
-        public void NotifyPreferenceChanges(
-            TSettings settings,
-            IEnumerable<string> changedFields = null)
+        public void NotifyPreferenceChanges(TSettings settings, IEnumerable<string> changedFields = null)
         {
 #if RWT_EMBEDDED_SPINE_SETTINGS
             SettingsScribe.NotifyPreferenceChanges(
 #else
             Spine.Api.SpineApi.Settings.NotifyPreferenceChanges(
 #endif
-                settings,
-                readOnlyDefinitions,
-                changedFields);
+                settings, readOnlyDefinitions, changedFields);
         }
 
         /// <summary>Resolves a definition's persisted key.</summary>
@@ -133,10 +115,7 @@ namespace Spine.UI.SettingsFramework
 #endif
         }
 
-        public SettingsScope<TSettings> Section(
-            string id,
-            string label,
-            string labelKey = null)
+        public SettingsScope<TSettings> Section(string id, string label, string labelKey = null)
         {
             return Section(id, label, labelKey, configure: null);
         }
@@ -146,42 +125,24 @@ namespace Spine.UI.SettingsFramework
         /// callback is an escape hatch for presentation metadata that is not
         /// part of the section's common label/key pair.
         /// </summary>
-        public SettingsScope<TSettings> Section(
-            string id,
-            string label,
-            string labelKey,
-            Action<SettingDefinition> configure)
+        public SettingsScope<TSettings> Section(string id, string label, string labelKey, Action<SettingDefinition> configure)
         {
-            SettingDefinition header = SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.Header,
-                label,
-                labelKey: labelKey);
+            SettingDefinition header = SettingDefinitionBuilder.Create(RequireId(id), SettingType.Header, label, labelKey: labelKey);
             configure?.Invoke(header);
             Root.Add(header);
-            return new SettingsScope<TSettings>(
-                definitions,
-                header.Id,
-                scribeKeyConvention,
-                onAdd);
+            return new SettingsScope<TSettings>(definitions, header.Id, scribeKeyConvention, onAdd);
         }
 
         public SettingsScope<TSettings> Under(string parentId)
         {
-            return new SettingsScope<TSettings>(
-                definitions,
-                RequireId(parentId),
-                scribeKeyConvention,
-                onAdd);
+            return new SettingsScope<TSettings>(definitions, RequireId(parentId), scribeKeyConvention, onAdd);
         }
 
         private static string RequireId(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new ArgumentException(
-                    "A settings definition identifier is required.",
-                    nameof(id));
+                throw new ArgumentException("A settings definition identifier is required.", nameof(id));
             }
 
             return id;
@@ -198,11 +159,7 @@ namespace Spine.UI.SettingsFramework
         private readonly Func<string, string> scribeKeyConvention;
         private readonly Action<SettingDefinition> onAdd;
 
-        internal SettingsScope(
-            List<SettingDefinition> definitions,
-            string parentId,
-            Func<string, string> scribeKeyConvention,
-            Action<SettingDefinition> onAdd)
+        internal SettingsScope(List<SettingDefinition> definitions, string parentId, Func<string, string> scribeKeyConvention, Action<SettingDefinition> onAdd)
         {
             this.definitions = definitions;
             this.parentId = parentId;
@@ -216,11 +173,7 @@ namespace Spine.UI.SettingsFramework
         /// </summary>
         public SettingsScope<TSettings> Under(string nestedParentId)
         {
-            return new SettingsScope<TSettings>(
-                definitions,
-                RequireId(nestedParentId),
-                scribeKeyConvention,
-                onAdd);
+            return new SettingsScope<TSettings>(definitions, RequireId(nestedParentId), scribeKeyConvention, onAdd);
         }
 
         /// <summary>
@@ -228,19 +181,9 @@ namespace Spine.UI.SettingsFramework
         /// configuration callback for consumer-owned metadata and callbacks;
         /// Spine only supplies the shared definition plumbing.
         /// </summary>
-        public SettingDefinition Define(
-            string id,
-            SettingType type,
-            string label = null,
-            string tooltip = null,
-            Action<SettingDefinition> configure = null)
+        public SettingDefinition Define(string id, SettingType type, string label = null, string tooltip = null, Action<SettingDefinition> configure = null)
         {
-            SettingDefinition definition = SettingDefinitionBuilder.Create(
-                RequireId(id),
-                type,
-                label,
-                tooltip: tooltip,
-                parentId: parentId);
+            SettingDefinition definition = SettingDefinitionBuilder.Create(RequireId(id), type, label, tooltip: tooltip, parentId: parentId);
             configure?.Invoke(definition);
             return Add(definition);
         }
@@ -262,8 +205,7 @@ namespace Spine.UI.SettingsFramework
                 definition.ParentId = parentId;
             }
 
-            if (!string.IsNullOrEmpty(definition.FieldName) &&
-                definition.ScribeKey == null)
+            if (!string.IsNullOrEmpty(definition.FieldName) && definition.ScribeKey == null)
             {
                 definition.ScribeKey = ScribeKey(definition.FieldName);
             }
@@ -277,23 +219,11 @@ namespace Spine.UI.SettingsFramework
         /// Adds an arbitrary field-backed definition while retaining typed
         /// direct-field selection and the schema's scribe-key convention.
         /// </summary>
-        public SettingDefinition Field<TValue>(
-            string id,
-            Expression<Func<TSettings, TValue>> field,
-            SettingType type,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null,
-            Action<SettingDefinition> configure = null)
+        public SettingDefinition Field<TValue>(string id, Expression<Func<TSettings, TValue>> field, SettingType type, string label, string tooltip = null,
+                                               Action<TSettings> onChanged = null, Action<SettingDefinition> configure = null)
         {
             string fieldName = SettingSelector.FieldName(field);
-            SettingDefinition definition = SettingDefinitionBuilder.Create(
-                RequireId(id),
-                type,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                scribeKey: ScribeKey(fieldName));
+            SettingDefinition definition = SettingDefinitionBuilder.Create(RequireId(id), type, label, tooltip: tooltip, parentId: parentId, scribeKey: ScribeKey(fieldName));
             definition.FieldName = fieldName;
             definition.OnChanged = Adapt(onChanged);
             if (type == SettingType.Enum && typeof(TValue).IsEnum)
@@ -305,295 +235,142 @@ namespace Spine.UI.SettingsFramework
             return Add(definition);
         }
 
-        public SettingDefinition Toggle(
-            string id,
-            Expression<Func<TSettings, bool>> field,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Toggle(string id, Expression<Func<TSettings, bool>> field, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
             string fieldName = SettingSelector.FieldName(field);
-            SettingDefinition definition = SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.Bool,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                fieldName: fieldName,
-                scribeKey: ScribeKey(fieldName),
-                onChanged: Adapt(onChanged));
+            SettingDefinition definition = SettingDefinitionBuilder.Create(RequireId(id), SettingType.Bool, label, tooltip: tooltip, parentId: parentId, fieldName: fieldName,
+                                                                           scribeKey: ScribeKey(fieldName), onChanged: Adapt(onChanged));
             definition.ControlsChildVisibility = false;
             return Add(definition);
         }
 
-        public SettingDefinition Int(
-            string id,
-            Expression<Func<TSettings, int>> field,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Int(string id, Expression<Func<TSettings, int>> field, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
             return Field(id, field, SettingType.Int, label, tooltip, onChanged);
         }
 
-        public SettingDefinition Int(
-            string id,
-            string fieldName,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Int(string id, string fieldName, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
-            return Add(SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.Int,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                fieldName: RequireFieldName(fieldName),
-                scribeKey: ScribeKey(fieldName),
-                onChanged: Adapt(onChanged)));
+            return Add(SettingDefinitionBuilder.Create(RequireId(id), SettingType.Int, label, tooltip: tooltip, parentId: parentId, fieldName: RequireFieldName(fieldName),
+                                                       scribeKey: ScribeKey(fieldName), onChanged: Adapt(onChanged)));
         }
 
-        public SettingDefinition Float(
-            string id,
-            Expression<Func<TSettings, float>> field,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Float(string id, Expression<Func<TSettings, float>> field, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
             return Field(id, field, SettingType.Float, label, tooltip, onChanged);
         }
 
-        public SettingDefinition Float(
-            string id,
-            string fieldName,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Float(string id, string fieldName, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
-            return Add(SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.Float,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                fieldName: RequireFieldName(fieldName),
-                scribeKey: ScribeKey(fieldName),
-                onChanged: Adapt(onChanged)));
+            return Add(SettingDefinitionBuilder.Create(RequireId(id), SettingType.Float, label, tooltip: tooltip, parentId: parentId, fieldName: RequireFieldName(fieldName),
+                                                       scribeKey: ScribeKey(fieldName), onChanged: Adapt(onChanged)));
         }
 
-        public SettingDefinition NumericInt(
-            string id,
-            Expression<Func<TSettings, int>> field,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition NumericInt(string id, Expression<Func<TSettings, int>> field, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
             return Field(id, field, SettingType.NumericInt, label, tooltip, onChanged);
         }
 
-        public SettingDefinition NumericInt(
-            string id,
-            string fieldName,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition NumericInt(string id, string fieldName, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
-            return Add(SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.NumericInt,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                fieldName: RequireFieldName(fieldName),
-                scribeKey: ScribeKey(fieldName),
-                onChanged: Adapt(onChanged)));
+            return Add(SettingDefinitionBuilder.Create(RequireId(id), SettingType.NumericInt, label, tooltip: tooltip, parentId: parentId, fieldName: RequireFieldName(fieldName),
+                                                       scribeKey: ScribeKey(fieldName), onChanged: Adapt(onChanged)));
         }
 
-        public SettingDefinition Slider(
-            string id,
-            Expression<Func<TSettings, float>> field,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Slider(string id, Expression<Func<TSettings, float>> field, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
             string fieldName = SettingSelector.FieldName(field);
             return Slider(id, fieldName, label, tooltip, onChanged);
         }
 
-        public SettingDefinition Slider(
-            string id,
-            string fieldName,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Slider(string id, string fieldName, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
             fieldName = RequireFieldName(fieldName);
-            SettingDefinition definition = SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.Slider,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                fieldName: fieldName,
-                scribeKey: ScribeKey(fieldName),
-                onChanged: Adapt(onChanged));
+            SettingDefinition definition = SettingDefinitionBuilder.Create(RequireId(id), SettingType.Slider, label, tooltip: tooltip, parentId: parentId, fieldName: fieldName,
+                                                                           scribeKey: ScribeKey(fieldName), onChanged: Adapt(onChanged));
             return Add(definition);
         }
 
-        public SettingDefinition Colour(
-            string id,
-            Expression<Func<TSettings, Color>> field,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Colour(string id, Expression<Func<TSettings, Color>> field, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
             string fieldName = SettingSelector.FieldName(field);
-            SettingDefinition definition = SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.Color,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                fieldName: fieldName,
-                scribeKey: ScribeKey(fieldName));
+            SettingDefinition definition = SettingDefinitionBuilder.Create(RequireId(id), SettingType.Color, label, tooltip: tooltip, parentId: parentId, fieldName: fieldName,
+                                                                           scribeKey: ScribeKey(fieldName));
             definition.OnChanged = Adapt(onChanged);
             return Add(definition);
         }
 
-        public SettingDefinition Enum<TEnum>(
-            string id,
-            Expression<Func<TSettings, TEnum>> field,
-            string label,
-            string tooltip = null,
-            Func<TEnum, string> labelProvider = null,
-            Func<TEnum, string> descriptionProvider = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Enum<TEnum>(string id, Expression<Func<TSettings, TEnum>> field, string label, string tooltip = null, Func<TEnum, string> labelProvider = null,
+                                             Func<TEnum, string> descriptionProvider = null, Action<TSettings> onChanged = null)
             where TEnum : struct
         {
             if (!typeof(TEnum).IsEnum)
             {
-                throw new ArgumentException(
-                    "The typed settings enum must be an enum type.",
-                    nameof(field));
+                throw new ArgumentException("The typed settings enum must be an enum type.", nameof(field));
             }
 
             string fieldName = SettingSelector.FieldName(field);
-            SettingDefinition definition = SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.Enum,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                fieldName: fieldName,
-                scribeKey: ScribeKey(fieldName),
-                enumType: typeof(TEnum),
-                labelProvider: Adapt(labelProvider),
-                descriptionProvider: Adapt(descriptionProvider));
+            SettingDefinition definition =
+                SettingDefinitionBuilder.Create(RequireId(id), SettingType.Enum, label, tooltip: tooltip, parentId: parentId, fieldName: fieldName, scribeKey: ScribeKey(fieldName),
+                                                enumType: typeof(TEnum), labelProvider: Adapt(labelProvider), descriptionProvider: Adapt(descriptionProvider));
             definition.OnChanged = Adapt(onChanged);
             return Add(definition);
         }
 
-        public SettingDefinition Color(
-            string id,
-            Expression<Func<TSettings, Color>> field,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Color(string id, Expression<Func<TSettings, Color>> field, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
             return Colour(id, field, label, tooltip, onChanged);
         }
 
-        public SettingDefinition Button(
-            string id,
-            string label,
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Button(string id, string label, string tooltip = null, Action<TSettings> onChanged = null)
         {
-            SettingDefinition definition = SettingDefinitionBuilder.Create(
-                RequireId(id),
-                SettingType.Button,
-                label,
-                tooltip: tooltip,
-                parentId: parentId,
-                onChanged: Adapt(onChanged));
+            SettingDefinition definition =
+                SettingDefinitionBuilder.Create(RequireId(id), SettingType.Button, label, tooltip: tooltip, parentId: parentId, onChanged: Adapt(onChanged));
             return Add(definition);
         }
 
-        public SettingDefinition Spacer(
-            string id,
-            string label = "",
-            string tooltip = null)
+        public SettingDefinition Spacer(string id, string label = "", string tooltip = null)
         {
             return Define(id, SettingType.Spacer, label, tooltip);
         }
 
-        public SettingDefinition DropdownListAdder(
-            string id,
-            string label,
-            Func<IEnumerable<string>> optionsProvider,
-            Action<string> onOptionAdded,
-            string tooltip = null)
+        public SettingDefinition DropdownListAdder(string id, string label, Func<IEnumerable<string>> optionsProvider, Action<string> onOptionAdded, string tooltip = null)
         {
-            SettingDefinition definition = Define(
-                id,
-                SettingType.DropdownListAdder,
-                label,
-                tooltip);
+            SettingDefinition definition = Define(id, SettingType.DropdownListAdder, label, tooltip);
             definition.DropdownOptionsProvider = optionsProvider;
             definition.OnOptionAdded = onOptionAdded;
             return definition;
         }
 
-        public SettingDefinition Custom(
-            string id,
-            Func<Rect, string, string, TSettings, bool, bool> drawer,
-            string label = "",
-            string tooltip = null,
-            Action<TSettings> onChanged = null)
+        public SettingDefinition Custom(string id, Func<Rect, string, string, TSettings, bool, bool> drawer, string label = "", string tooltip = null,
+                                        Action<TSettings> onChanged = null)
         {
-            SettingDefinition definition = Define(
-                id,
-                SettingType.Custom,
-                label,
-                tooltip);
-            definition.CustomDrawer = drawer == null
-                ? null
-                : (rect, rowLabel, rowTooltip, settings, disabled) =>
-                    drawer(rect, rowLabel, rowTooltip, (TSettings)settings, disabled);
+            SettingDefinition definition = Define(id, SettingType.Custom, label, tooltip);
+            definition.CustomDrawer = drawer == null ? null : (rect, rowLabel, rowTooltip, settings, disabled) => drawer(rect, rowLabel, rowTooltip, (TSettings)settings, disabled);
             definition.OnChanged = Adapt(onChanged);
             return definition;
         }
 
         private string ScribeKey(string fieldName)
         {
-            return scribeKeyConvention == null
-                ? null
-                : scribeKeyConvention(fieldName);
+            return scribeKeyConvention == null ? null : scribeKeyConvention(fieldName);
         }
 
         private static Action<object> Adapt(Action<TSettings> callback)
         {
-            return callback == null
-                ? null
-                : settings => callback((TSettings)settings);
+            return callback == null ? null : settings => callback((TSettings)settings);
         }
 
-        private static Func<object, string> Adapt<TValue>(
-            Func<TValue, string> callback)
+        private static Func<object, string> Adapt<TValue>(Func<TValue, string> callback)
         {
-            return callback == null
-                ? null
-                : value => callback((TValue)value);
+            return callback == null ? null : value => callback((TValue)value);
         }
 
         private static string RequireId(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                throw new ArgumentException(
-                    "A settings definition identifier is required.",
-                    nameof(id));
+                throw new ArgumentException("A settings definition identifier is required.", nameof(id));
             }
 
             return id;
@@ -603,9 +380,7 @@ namespace Spine.UI.SettingsFramework
         {
             if (string.IsNullOrWhiteSpace(fieldName))
             {
-                throw new ArgumentException(
-                    "A settings field name is required.",
-                    nameof(fieldName));
+                throw new ArgumentException("A settings field name is required.", nameof(fieldName));
             }
 
             return fieldName;
@@ -619,52 +394,34 @@ namespace Spine.UI.SettingsFramework
     /// </summary>
     internal static class SettingDefinitionBuilder
     {
-        internal static SettingDefinition Create(
-            string id,
-            SettingType type,
-            string label = null,
-            string labelKey = null,
-            string tooltip = null,
-            string tooltipKey = null,
-            string parentId = null,
-            string fieldName = null,
-            string scribeKey = null,
-            bool showInSimpleView = true,
-            Type enumType = null,
-            Func<object, string> labelProvider = null,
-            Func<object, string> descriptionProvider = null,
-            Action<object> onChanged = null)
+        internal static SettingDefinition Create(string id, SettingType type, string label = null, string labelKey = null, string tooltip = null, string tooltipKey = null,
+                                                 string parentId = null, string fieldName = null, string scribeKey = null, bool showInSimpleView = true, Type enumType = null,
+                                                 Func<object, string> labelProvider = null, Func<object, string> descriptionProvider = null, Action<object> onChanged = null)
         {
-            return new SettingDefinition
-            {
-                Id = id,
-                Type = type,
-                Label = label,
-                LabelKey = labelKey,
-                Tooltip = tooltip,
-                TooltipKey = tooltipKey,
-                ParentId = parentId,
-                FieldName = fieldName,
-                ScribeKey = scribeKey,
-                ShowInSimpleView = showInSimpleView,
-                ShowInAdvancedView = true,
-                EnumType = enumType,
-                EnumLabelProvider = labelProvider,
-                EnumDescriptionProvider = descriptionProvider,
-                OnChanged = onChanged
-            };
+            return new SettingDefinition { Id = id,
+                                           Type = type,
+                                           Label = label,
+                                           LabelKey = labelKey,
+                                           Tooltip = tooltip,
+                                           TooltipKey = tooltipKey,
+                                           ParentId = parentId,
+                                           FieldName = fieldName,
+                                           ScribeKey = scribeKey,
+                                           ShowInSimpleView = showInSimpleView,
+                                           ShowInAdvancedView = true,
+                                           EnumType = enumType,
+                                           EnumLabelProvider = labelProvider,
+                                           EnumDescriptionProvider = descriptionProvider,
+                                           OnChanged = onChanged };
         }
     }
 
     internal static class SettingSelector
     {
         private const string DirectFieldMessage =
-            "A settings selector must be a direct field access such as " +
-            "settings => settings.Enabled; properties, nested members, and " +
-            "method calls are not supported.";
+            "A settings selector must be a direct field access such as " + "settings => settings.Enabled; properties, nested members, and " + "method calls are not supported.";
 
-        internal static string FieldName<TSettings, TValue>(
-            Expression<Func<TSettings, TValue>> selector)
+        internal static string FieldName<TSettings, TValue>(Expression<Func<TSettings, TValue>> selector)
         {
             if (selector == null)
             {
@@ -680,11 +437,8 @@ namespace Spine.UI.SettingsFramework
 
             if (field.FieldType != typeof(TValue))
             {
-                throw new ArgumentException(
-                    "The settings selector field '" + field.Name +
-                    "' has type " + field.FieldType.FullName +
-                    ", not " + typeof(TValue).FullName + ".",
-                    nameof(selector));
+                throw new ArgumentException("The settings selector field '" + field.Name + "' has type " + field.FieldType.FullName + ", not " + typeof(TValue).FullName + ".",
+                                            nameof(selector));
             }
 
             return field.Name;
@@ -699,12 +453,9 @@ namespace Spine.UI.SettingsFramework
     /// </summary>
     internal static class SettingsPreparation
     {
-        private static readonly HashSet<string> AuditedSettingsTypes =
-            new HashSet<string>(StringComparer.Ordinal);
+        private static readonly HashSet<string> AuditedSettingsTypes = new HashSet<string>(StringComparer.Ordinal);
 
-        internal static void Prepare(
-            object settings,
-            IReadOnlyList<SettingDefinition> definitions)
+        internal static void Prepare(object settings, IReadOnlyList<SettingDefinition> definitions)
         {
             if (settings == null || definitions == null)
             {
@@ -726,8 +477,7 @@ namespace Spine.UI.SettingsFramework
                     definition.SortOrder = index;
                 }
 
-                if (definition.DefaultValue != null ||
-                    string.IsNullOrEmpty(definition.FieldName))
+                if (definition.DefaultValue != null || string.IsNullOrEmpty(definition.FieldName))
                 {
                     continue;
                 }
@@ -737,11 +487,7 @@ namespace Spine.UI.SettingsFramework
                     pristine = Activator.CreateInstance(settingsType);
                 }
 
-                FieldInfo field = settingsType.GetField(
-                    definition.FieldName,
-                    BindingFlags.Instance |
-                    BindingFlags.Public |
-                    BindingFlags.NonPublic);
+                FieldInfo field = settingsType.GetField(definition.FieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 if (field != null)
                 {
                     definition.DefaultValue = field.GetValue(pristine);
@@ -756,9 +502,7 @@ namespace Spine.UI.SettingsFramework
         /// deferred until language data exists because this method also runs
         /// during early settings scribing.
         /// </summary>
-        private static void ValidatePresentation(
-            Type settingsType,
-            IReadOnlyList<SettingDefinition> definitions)
+        private static void ValidatePresentation(Type settingsType, IReadOnlyList<SettingDefinition> definitions)
         {
             if (settingsType == null || !Prefs.DevMode)
             {
@@ -784,33 +528,21 @@ namespace Spine.UI.SettingsFramework
                     continue;
                 }
 
-                string id = string.IsNullOrEmpty(definition.Id)
-                    ? "(no id)"
-                    : definition.Id;
+                string id = string.IsNullOrEmpty(definition.Id) ? "(no id)" : definition.Id;
 
-                if (!string.IsNullOrEmpty(definition.LabelKey) &&
-                    !definition.LabelKey.CanTranslate())
+                if (!string.IsNullOrEmpty(definition.LabelKey) && !definition.LabelKey.CanTranslate())
                 {
-                    problems.Add(
-                        "  " + id + ": LabelKey '" + definition.LabelKey +
-                        "' has no translation entry.");
+                    problems.Add("  " + id + ": LabelKey '" + definition.LabelKey + "' has no translation entry.");
                 }
 
-                if (!string.IsNullOrEmpty(definition.TooltipKey) &&
-                    !definition.TooltipKey.CanTranslate())
+                if (!string.IsNullOrEmpty(definition.TooltipKey) && !definition.TooltipKey.CanTranslate())
                 {
-                    problems.Add(
-                        "  " + id + ": TooltipKey '" + definition.TooltipKey +
-                        "' has no translation entry.");
+                    problems.Add("  " + id + ": TooltipKey '" + definition.TooltipKey + "' has no translation entry.");
                 }
 
-                if (WantsExplanation(definition.Type) &&
-                    string.IsNullOrEmpty(definition.TooltipKey) &&
-                    string.IsNullOrEmpty(definition.Tooltip))
+                if (WantsExplanation(definition.Type) && string.IsNullOrEmpty(definition.TooltipKey) && string.IsNullOrEmpty(definition.Tooltip))
                 {
-                    problems.Add(
-                        "  " + id + ": no tooltip. A player who hovers this " +
-                        "setting has nothing to read.");
+                    problems.Add("  " + id + ": no tooltip. A player who hovers this " + "setting has nothing to read.");
                 }
             }
 
@@ -819,23 +551,13 @@ namespace Spine.UI.SettingsFramework
                 return;
             }
 
-            Log.Warning(
-                "[Spine] Settings audit for " + settingsType.Name +
-                " found " + problems.Count + " issue(s):\n" +
-                string.Join("\n", problems.ToArray()));
+            Log.Warning("[Spine] Settings audit for " + settingsType.Name + " found " + problems.Count + " issue(s):\n" + string.Join("\n", problems.ToArray()));
         }
 
         private static bool WantsExplanation(SettingType type)
         {
-            return type == SettingType.Bool ||
-                type == SettingType.Color ||
-                type == SettingType.Enum ||
-                type == SettingType.Button ||
-                type == SettingType.Slider ||
-                type == SettingType.Int ||
-                type == SettingType.Float ||
-                type == SettingType.NumericInt ||
-                type == SettingType.DropdownListAdder;
+            return type == SettingType.Bool || type == SettingType.Color || type == SettingType.Enum || type == SettingType.Button || type == SettingType.Slider ||
+                   type == SettingType.Int || type == SettingType.Float || type == SettingType.NumericInt || type == SettingType.DropdownListAdder;
         }
     }
 
@@ -854,9 +576,7 @@ namespace Spine.UI.SettingsFramework
     public static class SettingRefinements
     {
         /// <summary>Sets the reset and absent-key default for this definition.</summary>
-        public static SettingDefinition DefaultTo(
-            this SettingDefinition definition,
-            object value)
+        public static SettingDefinition DefaultTo(this SettingDefinition definition, object value)
         {
             if (definition != null)
             {
@@ -867,8 +587,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Marks this setting as controlling the visibility of its children.</summary>
-        public static SettingDefinition ControlsChildren(
-            this SettingDefinition definition)
+        public static SettingDefinition ControlsChildren(this SettingDefinition definition)
         {
             if (definition != null)
             {
@@ -879,9 +598,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Uses a specific persisted key for this definition.</summary>
-        public static SettingDefinition ScribeAs(
-            this SettingDefinition definition,
-            string key)
+        public static SettingDefinition ScribeAs(this SettingDefinition definition, string key)
         {
             if (definition != null)
             {
@@ -892,10 +609,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Sets the localized label and tooltip keys for this definition.</summary>
-        public static SettingDefinition Localized(
-            this SettingDefinition definition,
-            string labelKey,
-            string tooltipKey)
+        public static SettingDefinition Localized(this SettingDefinition definition, string labelKey, string tooltipKey)
         {
             if (definition != null)
             {
@@ -906,9 +620,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition WithScribeDefault(
-            this SettingDefinition definition,
-            object value)
+        public static SettingDefinition WithScribeDefault(this SettingDefinition definition, object value)
         {
             if (definition != null)
             {
@@ -918,8 +630,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition WithoutAutoScribe(
-            this SettingDefinition definition)
+        public static SettingDefinition WithoutAutoScribe(this SettingDefinition definition)
         {
             if (definition != null)
             {
@@ -929,9 +640,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition ClassifiedAs(
-            this SettingDefinition definition,
-            SettingClassification classification)
+        public static SettingDefinition ClassifiedAs(this SettingDefinition definition, SettingClassification classification)
         {
             if (definition != null)
             {
@@ -941,9 +650,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition Under(
-            this SettingDefinition definition,
-            string parentId)
+        public static SettingDefinition Under(this SettingDefinition definition, string parentId)
         {
             if (definition != null)
             {
@@ -953,9 +660,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition Ordered(
-            this SettingDefinition definition,
-            int sortOrder)
+        public static SettingDefinition Ordered(this SettingDefinition definition, int sortOrder)
         {
             if (definition != null)
             {
@@ -965,9 +670,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition SearchableBy(
-            this SettingDefinition definition,
-            params string[] keywords)
+        public static SettingDefinition SearchableBy(this SettingDefinition definition, params string[] keywords)
         {
             if (definition != null)
             {
@@ -977,10 +680,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition ShownIn(
-            this SettingDefinition definition,
-            bool simple,
-            bool advanced = true)
+        public static SettingDefinition ShownIn(this SettingDefinition definition, bool simple, bool advanced = true)
         {
             if (definition != null)
             {
@@ -991,9 +691,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition Accented(
-            this SettingDefinition definition,
-            Color color)
+        public static SettingDefinition Accented(this SettingDefinition definition, Color color)
         {
             if (definition != null)
             {
@@ -1003,8 +701,7 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
-        public static SettingDefinition RestartRequired(
-            this SettingDefinition definition)
+        public static SettingDefinition RestartRequired(this SettingDefinition definition)
         {
             if (definition != null)
             {
@@ -1015,9 +712,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Holds this entry outside the scrolling region.</summary>
-        public static SettingDefinition Pinned(
-            this SettingDefinition definition,
-            SettingPin pin)
+        public static SettingDefinition Pinned(this SettingDefinition definition, SettingPin pin)
         {
             if (definition != null)
             {
@@ -1032,9 +727,7 @@ namespace Spine.UI.SettingsFramework
         /// object. Named ShownWhen rather than VisibleWhen so it cannot be
         /// confused with the field of that name, which is a delegate.
         /// </summary>
-        public static SettingDefinition ShownWhen(
-            this SettingDefinition definition,
-            Func<object, bool> predicate)
+        public static SettingDefinition ShownWhen(this SettingDefinition definition, Func<object, bool> predicate)
         {
             if (definition != null)
             {
@@ -1045,8 +738,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Hides this entry from the Simple view.</summary>
-        public static SettingDefinition AdvancedOnly(
-            this SettingDefinition definition)
+        public static SettingDefinition AdvancedOnly(this SettingDefinition definition)
         {
             if (definition != null)
             {
@@ -1061,10 +753,7 @@ namespace Spine.UI.SettingsFramework
         /// meant rather than as an empty one, because an unusable slider is a
         /// worse outcome than a silently reordered pair.
         /// </summary>
-        public static SettingDefinition Range(
-            this SettingDefinition definition,
-            float min,
-            float max)
+        public static SettingDefinition Range(this SettingDefinition definition, float min, float max)
         {
             if (definition != null)
             {
@@ -1080,9 +769,7 @@ namespace Spine.UI.SettingsFramework
         /// player lands on 0.75 rather than 0.7431. Zero or less leaves it
         /// continuous.
         /// </summary>
-        public static SettingDefinition Step(
-            this SettingDefinition definition,
-            float step)
+        public static SettingDefinition Step(this SettingDefinition definition, float step)
         {
             if (definition != null)
             {
@@ -1097,20 +784,16 @@ namespace Spine.UI.SettingsFramework
         /// 0..1 range; on any other range the number shown will not match the
         /// value stored.
         /// </summary>
-        public static SettingDefinition ShowsPercent(
-            this SettingDefinition definition)
+        public static SettingDefinition ShowsPercent(this SettingDefinition definition)
         {
-            return definition.ShowsValue(
-                value => Mathf.RoundToInt(value * 100f) + "%");
+            return definition.ShowsValue(value => Mathf.RoundToInt(value * 100f) + "%");
         }
 
         /// <summary>
         /// Replaces the numeric readout beside a slider. Use for units, counts,
         /// or a word standing in for a band of values.
         /// </summary>
-        public static SettingDefinition ShowsValue(
-            this SettingDefinition definition,
-            Func<float, string> formatter)
+        public static SettingDefinition ShowsValue(this SettingDefinition definition, Func<float, string> formatter)
         {
             if (definition != null)
             {
@@ -1125,9 +808,7 @@ namespace Spine.UI.SettingsFramework
         /// schema declaration remains chainable. This keeps the shared API
         /// feature-neutral as consumers add presentation callbacks of their own.
         /// </summary>
-        public static SettingDefinition Configure(
-            this SettingDefinition definition,
-            Action<SettingDefinition> configure)
+        public static SettingDefinition Configure(this SettingDefinition definition, Action<SettingDefinition> configure)
         {
             if (definition != null)
             {
@@ -1138,10 +819,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Sets the legacy numeric bounds used by a consumer renderer.</summary>
-        public static SettingDefinition ValueRange(
-            this SettingDefinition definition,
-            float min,
-            float max)
+        public static SettingDefinition ValueRange(this SettingDefinition definition, float min, float max)
         {
             if (definition != null)
             {
@@ -1153,10 +831,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Sets the optional labels at the ends of a numeric control.</summary>
-        public static SettingDefinition ValueLabels(
-            this SettingDefinition definition,
-            string minLabel,
-            string maxLabel)
+        public static SettingDefinition ValueLabels(this SettingDefinition definition, string minLabel, string maxLabel)
         {
             if (definition != null)
             {
@@ -1168,9 +843,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Sets the format string used for a numeric readout.</summary>
-        public static SettingDefinition FormattedAs(
-            this SettingDefinition definition,
-            string format)
+        public static SettingDefinition FormattedAs(this SettingDefinition definition, string format)
         {
             if (definition != null)
             {
@@ -1181,9 +854,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Marks a boolean definition for consumer-provided emphasis.</summary>
-        public static SettingDefinition Emphasized(
-            this SettingDefinition definition,
-            bool value = true)
+        public static SettingDefinition Emphasized(this SettingDefinition definition, bool value = true)
         {
             if (definition != null)
             {
@@ -1194,10 +865,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Sets the dynamic options and selection callback for a dropdown row.</summary>
-        public static SettingDefinition OptionsFrom(
-            this SettingDefinition definition,
-            Func<IEnumerable<string>> optionsProvider,
-            Action<string> onOptionAdded)
+        public static SettingDefinition OptionsFrom(this SettingDefinition definition, Func<IEnumerable<string>> optionsProvider, Action<string> onOptionAdded)
         {
             if (definition != null)
             {
@@ -1212,15 +880,9 @@ namespace Spine.UI.SettingsFramework
         /// Adds a typed suppression rule while leaving its condition and reason
         /// in consumer code.
         /// </summary>
-        public static SettingDefinition SuppressedWhen<TSettings>(
-            this SettingDefinition definition,
-            Func<TSettings, bool> when,
-            Func<TSettings, string> reason,
-            string suppressorSettingId = null,
-            string linkLabel = null,
-            string externalActionUrl = null,
-            string externalActionLabel = null,
-            string externalActionTooltip = null)
+        public static SettingDefinition SuppressedWhen<TSettings>(this SettingDefinition definition, Func<TSettings, bool> when, Func<TSettings, string> reason,
+                                                                  string suppressorSettingId = null, string linkLabel = null, string externalActionUrl = null,
+                                                                  string externalActionLabel = null, string externalActionTooltip = null)
         {
             if (definition != null)
             {
@@ -1229,26 +891,17 @@ namespace Spine.UI.SettingsFramework
                     definition.Suppressions = new List<SettingSuppression>();
                 }
 
-                definition.Suppressions.Add(new SettingSuppression
-                {
-                    When = when == null ? null : settings => when((TSettings)settings),
-                    Reason = reason == null ? null : settings => reason((TSettings)settings),
-                    SuppressorSettingId = suppressorSettingId,
-                    LinkLabel = linkLabel,
-                    ExternalActionUrl = externalActionUrl,
-                    ExternalActionLabel = externalActionLabel,
-                    ExternalActionTooltip = externalActionTooltip
-                });
+                definition.Suppressions.Add(new SettingSuppression { When = when == null ? null : settings => when ((TSettings)settings),
+                                                                     Reason = reason == null ? null : settings => reason((TSettings)settings),
+                                                                     SuppressorSettingId = suppressorSettingId, LinkLabel = linkLabel, ExternalActionUrl = externalActionUrl,
+                                                                     ExternalActionLabel = externalActionLabel, ExternalActionTooltip = externalActionTooltip });
             }
 
             return definition;
         }
 
         /// <summary>Sets the custom-row reset hooks used by a consumer renderer.</summary>
-        public static SettingDefinition WithCustomReset(
-            this SettingDefinition definition,
-            Func<object, bool> hasNonDefaultValue,
-            Action<object> reset)
+        public static SettingDefinition WithCustomReset(this SettingDefinition definition, Func<object, bool> hasNonDefaultValue, Action<object> reset)
         {
             if (definition != null)
             {
