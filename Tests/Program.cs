@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Spine.Api;
 using Spine.Caching;
 using Spine.Harmony;
@@ -26,6 +27,7 @@ namespace Spine.Tests
             Run("compact settings presentation thresholds", TestSettingsPresentationPolicy);
             Run("settings preparation is lazy and idempotent", TestSettingsPreparation);
             Run("typed settings schema builds compatible definitions", TestSettingsSchema);
+            Run("settings schema covers legacy definition metadata", TestSettingsSchemaLegacySurface);
             Run("contextual tooltips never add hints", TestContextualTooltipComposition);
 
             return Finish();
@@ -279,6 +281,153 @@ namespace Spine.Tests
                 "method selector rejected");
         }
 
+        private static void TestSettingsSchemaLegacySurface()
+        {
+            Equal(6, (int)SettingType.Slider, "existing slider enum value retained");
+            Equal(7, (int)SettingType.Int, "new integer enum value appended");
+            Equal(8, (int)SettingType.Float, "new float enum value appended");
+            Equal(9, (int)SettingType.Spacer, "new spacer enum value appended");
+            Equal(10, (int)SettingType.DropdownListAdder,
+                "new dropdown enum value appended");
+            Equal(11, (int)SettingType.NumericInt,
+                "new numeric-integer enum value appended");
+
+            var schema = new SettingsSchema<SchemaSettings>(
+                SettingsSchemaConventions.LowerCamelCase);
+            SettingDefinition integer = schema.Root.Int(
+                "count",
+                settings => settings.Count,
+                "Count",
+                "Count tooltip").
+                DefaultTo(3).
+                ValueRange(-2f, 8f).
+                ValueLabels("Low", "High").
+                FormattedAs("{0:0}");
+            SettingDefinition floating = schema.Root.Float(
+                "ratio",
+                settings => settings.Ratio,
+                "Ratio");
+            SettingDefinition numeric = schema.Root.NumericInt(
+                "numeric",
+                settings => settings.Count,
+                "Numeric");
+            SettingDefinition button = schema.Root.Button(
+                "button",
+                "Apply",
+                "Apply tooltip",
+                settings => settings.Changed++);
+            SettingDefinition dropdown = schema.Root.DropdownListAdder(
+                "options",
+                "Add option",
+                () => new[] { "one", "two" },
+                value => { });
+            SettingDefinition custom = schema.Root.Custom(
+                "custom",
+                (rect, label, tooltip, settings, disabled) =>
+                {
+                    settings.Changed++;
+                    return true;
+                },
+                "Custom",
+                "Custom tooltip");
+            SettingDefinition arbitrary = schema.Root.Field(
+                "arbitrary",
+                settings => settings.Selected,
+                SettingType.Custom,
+                "Arbitrary",
+                configure: definition =>
+                {
+                    definition.SearchKeywords = new[] { "legacy", "alias" };
+                    definition.Classification = SettingClassification.State;
+                    definition.DisableAutoScribe = true;
+                    definition.CustomHasNonDefaultValue = _ => true;
+                    definition.CustomReset = _ => { };
+                    definition.Suppressions = new List<SettingSuppression>
+                    {
+                        new SettingSuppression
+                        {
+                            When = _ => true,
+                            Reason = _ => "Managed elsewhere"
+                        }
+                    };
+                });
+            var configuredSchema = new SettingsSchema<SchemaSettings>();
+            configuredSchema.Section("header", "Header", null, definition =>
+                {
+                    definition.HeaderColor = new UnityEngine.Color();
+                    definition.EmphasizeAsHeader = true;
+                });
+            SettingDefinition header = configuredSchema.Definitions[0];
+
+            Equal(SettingType.Int, integer.Type, "typed integer definition type");
+            Equal(nameof(SchemaSettings.Count), integer.FieldName,
+                "typed integer field name");
+            Equal("count", integer.ScribeKey, "typed integer scribe key convention");
+            Equal(3, integer.DefaultValue, "integer default refinement");
+            Equal(-2f, integer.MinValue, "integer lower bound");
+            Equal(8f, integer.MaxValue, "integer upper bound");
+            Equal("Low", integer.MinLabel, "numeric lower label");
+            Equal("High", integer.MaxLabel, "numeric upper label");
+            Equal("{0:0}", integer.ValueFormat, "numeric value format");
+            Equal(SettingType.Float, floating.Type, "typed float definition type");
+            Equal(SettingType.NumericInt, numeric.Type,
+                "typed numeric integer definition type");
+            var changedSettings = new SchemaSettings();
+            button.OnChanged(changedSettings);
+            Equal(1, changedSettings.Changed, "typed button callback adapts");
+            Equal(SettingType.DropdownListAdder, dropdown.Type,
+                "dropdown definition type");
+            Equal("one", dropdown.DropdownOptionsProvider().First(),
+                "dropdown options provider retained");
+            Equal(SettingType.Custom, custom.Type, "custom definition type");
+            Require(custom.CustomDrawer(
+                    new UnityEngine.Rect(), "Custom", "Tooltip", changedSettings, false),
+                "typed custom drawer adapts");
+            Equal(2, changedSettings.Changed, "custom callback invoked");
+            Equal(SettingClassification.State, arbitrary.Classification,
+                "arbitrary definition preserves legacy classification");
+            Require(arbitrary.DisableAutoScribe, "arbitrary scribe opt-out preserved");
+            Equal("legacy", arbitrary.SearchKeywords[0],
+                "arbitrary search metadata preserved");
+            Require(arbitrary.GetActiveSuppression(changedSettings) != null,
+                "suppression metadata is usable through the definition");
+            Equal("header", header.Id, "configured section still adds a header");
+            Require(header.EmphasizeAsHeader, "header configuration retained");
+
+            SettingDefinition suppressed = schema.Root.Toggle(
+                "suppressed",
+                settings => settings.Enabled,
+                "Suppressed").SuppressedWhen<SchemaSettings>(
+                    settings => !settings.Enabled,
+                    settings => "Managed elsewhere",
+                    suppressorSettingId: "count",
+                    linkLabel: "Count");
+            var suppressedSettings = new SchemaSettings();
+            suppressedSettings.Enabled = false;
+            SettingSuppression activeSuppression =
+                suppressed.GetActiveSuppression(suppressedSettings);
+            Require(activeSuppression != null, "typed suppression activates");
+            Equal("Managed elsewhere", activeSuppression.ResolveReason(suppressedSettings),
+                "typed suppression reason adapts");
+            Equal("count", activeSuppression.SuppressorSettingId,
+                "suppression target retained");
+            suppressedSettings.Enabled = true;
+            Require(suppressed.GetActiveSuppression(suppressedSettings) == null,
+                "typed suppression deactivates");
+
+            var hierarchy = new SettingsHierarchy(new[]
+            {
+                header,
+                SettingDefinitions.Spacer("gap"),
+                integer
+            });
+            Equal(1, hierarchy.SettingCount,
+                "headers and spacers are excluded from configurable count");
+            Require(hierarchy.GetFlattenedForView(SettingsViewMode.All, suppressedSettings)
+                .Any(definition => definition.Type == SettingType.Spacer),
+                "spacer remains in display traversal");
+        }
+
         private static void RequireRejectsSelector(
             Action action,
             string description)
@@ -312,6 +461,9 @@ namespace Spine.Tests
         {
             public bool Enabled;
             public float Size;
+            public int Count;
+            public float Ratio;
+            public string Selected;
             public UnityEngine.Color Color;
             public SchemaMode Mode;
             public SchemaNested Nested = new SchemaNested();

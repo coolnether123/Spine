@@ -52,6 +52,45 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>
+        /// Draws a checkbox with header styling while retaining normal toggle behavior.
+        /// </summary>
+        public static bool DrawHeaderBool(
+            Rect rect,
+            string label,
+            ref bool value,
+            Color? headerColor = null,
+            string tooltip = null,
+            bool disabled = false)
+        {
+            bool original = value;
+            const float checkboxSize = 24f;
+            Rect checkboxRect = new Rect(
+                rect.xMax - checkboxSize,
+                rect.y + ((rect.height - checkboxSize) / 2f),
+                checkboxSize,
+                checkboxSize);
+            Rect labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, checkboxRect.x - rect.x - 8f),
+                rect.height);
+
+            DrawSectionHeader(rect, labelRect, label, headerColor);
+            Widgets.Checkbox(checkboxRect.x, checkboxRect.y, ref value, checkboxSize, disabled);
+            if (!disabled && Widgets.ButtonInvisible(labelRect))
+            {
+                value = !value;
+            }
+
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                TooltipHandler.TipRegion(rect, tooltip);
+            }
+
+            return original != value;
+        }
+
+        /// <summary>
         /// Draws a color swatch with an edit button that opens a picker.
         /// </summary>
         public static bool DrawColor(
@@ -179,6 +218,134 @@ namespace Spine.UI.SettingsFramework
 
             value = updated;
             return true;
+        }
+
+        /// <summary>Draws a bounded float control with optional endpoint labels.</summary>
+        public static bool DrawFloat(
+            Rect rect,
+            string label,
+            ref float value,
+            float min,
+            float max,
+            string minLabel = null,
+            string maxLabel = null,
+            string valueFormat = null,
+            string tooltip = null,
+            bool disabled = false)
+        {
+            float original = value;
+            Rect sliderRect = rect.RightPart(0.48f);
+            Rect labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, sliderRect.x - rect.x - 6f),
+                rect.height);
+
+            string valueText;
+            try
+            {
+                valueText = string.IsNullOrEmpty(valueFormat)
+                    ? value.ToString("F1")
+                    : string.Format(valueFormat, value);
+            }
+            catch (FormatException)
+            {
+                valueText = value.ToString("F1");
+            }
+
+            DrawSettingLabel(labelRect, label + ": " + valueText, disabled);
+
+            bool previousEnabled = GUI.enabled;
+            Color previousColor = GUI.color;
+            if (disabled)
+            {
+                GUI.enabled = false;
+                GUI.color = Color.gray;
+            }
+
+            value = Widgets.HorizontalSlider(sliderRect, value, min, max);
+
+            if (disabled)
+            {
+                GUI.enabled = previousEnabled;
+                GUI.color = previousColor;
+            }
+
+            if (!string.IsNullOrEmpty(minLabel) || !string.IsNullOrEmpty(maxLabel))
+            {
+                TextAnchor oldAnchor = Text.Anchor;
+                Text.Anchor = TextAnchor.UpperLeft;
+                if (!string.IsNullOrEmpty(minLabel))
+                {
+                    Widgets.Label(
+                        new Rect(sliderRect.x, sliderRect.yMax - 10f, sliderRect.width / 2f, 10f),
+                        minLabel);
+                }
+
+                if (!string.IsNullOrEmpty(maxLabel))
+                {
+                    Text.Anchor = TextAnchor.UpperRight;
+                    Widgets.Label(
+                        new Rect(
+                            sliderRect.x + sliderRect.width / 2f,
+                            sliderRect.yMax - 10f,
+                            sliderRect.width / 2f,
+                            10f),
+                        maxLabel);
+                }
+
+                Text.Anchor = oldAnchor;
+            }
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                TooltipHandler.TipRegion(rect, tooltip);
+            }
+
+            return !Mathf.Approximately(original, value);
+        }
+
+        /// <summary>Draws a bounded integer slider.</summary>
+        public static bool DrawInt(
+            Rect rect,
+            string label,
+            ref int value,
+            int min,
+            int max,
+            string tooltip = null,
+            bool disabled = false)
+        {
+            int original = value;
+            Rect sliderRect = rect.RightPart(0.48f);
+            Rect labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, sliderRect.x - rect.x - 6f),
+                rect.height);
+            DrawSettingLabel(labelRect, label + ": " + value, disabled);
+
+            bool previousEnabled = GUI.enabled;
+            Color previousColor = GUI.color;
+            if (disabled)
+            {
+                GUI.enabled = false;
+                GUI.color = Color.gray;
+            }
+
+            float updated = Widgets.HorizontalSlider(sliderRect, value, min, max, true);
+            value = Mathf.Clamp(Mathf.RoundToInt(updated), min, max);
+
+            if (disabled)
+            {
+                GUI.enabled = previousEnabled;
+                GUI.color = previousColor;
+            }
+
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                TooltipHandler.TipRegion(rect, tooltip);
+            }
+
+            return original != value;
         }
 
         /// <summary>
@@ -336,30 +503,177 @@ namespace Spine.UI.SettingsFramework
             return clicked;
         }
 
+        /// <summary>Draws an empty row used as visual separation.</summary>
+        public static void DrawSpacer(Rect rect)
+        {
+            // Intentionally empty: the row height provides the separation.
+        }
+
+        /// <summary>
+        /// Draws a button that opens a menu of dynamically supplied options.
+        /// </summary>
+        public static void DrawDropdownListAdder(
+            Rect rect,
+            string label,
+            Func<IEnumerable<string>> optionsProvider,
+            Action<string> onAdded,
+            string tooltip = null,
+            bool disabled = false)
+        {
+            Rect buttonRect = rect.RightPart(0.38f);
+            Rect labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, buttonRect.x - rect.x - 6f),
+                rect.height);
+            DrawSettingLabel(labelRect, label, disabled);
+
+            if (!disabled && Widgets.ButtonText(buttonRect, "Add"))
+            {
+                List<FloatMenuOption> options = new List<FloatMenuOption>();
+                Dictionary<FloatMenuOption, string> descriptions =
+                    new Dictionary<FloatMenuOption, string>();
+                IEnumerable<string> available = optionsProvider?.Invoke();
+                if (available != null)
+                {
+                    foreach (string optionText in available)
+                    {
+                        string localOption = optionText;
+                        FloatMenuOption option = new FloatMenuOption(
+                            localOption,
+                            () => onAdded?.Invoke(localOption));
+                        options.Add(option);
+                        descriptions[option] = tooltip ?? string.Empty;
+                    }
+                }
+
+                if (options.Count == 0)
+                {
+                    options.Add(new FloatMenuOption("No options available", null));
+                }
+
+                Find.WindowStack.Add(new DescribedFloatMenu(
+                    options,
+                    null,
+                    label,
+                    tooltip,
+                    descriptions));
+            }
+
+            if (!string.IsNullOrEmpty(tooltip) && !DescribedFloatMenu.AnyOpen)
+            {
+                TooltipHandler.TipRegion(labelRect, tooltip);
+            }
+        }
+
+        /// <summary>Draws an integer input with decrement/increment buttons.</summary>
+        public static bool DrawNumericInt(
+            Rect rect,
+            string label,
+            ref int value,
+            int min,
+            int max,
+            string tooltip = null,
+            bool disabled = false)
+        {
+            int original = value;
+            Rect controlRect = rect.RightPart(0.48f);
+            Rect labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, controlRect.x - rect.x - 6f),
+                rect.height);
+            DrawSettingLabel(labelRect, label, disabled);
+
+            bool previousEnabled = GUI.enabled;
+            Color previousColor = GUI.color;
+            if (disabled)
+            {
+                GUI.enabled = false;
+                GUI.color = Color.gray;
+            }
+
+            const float buttonSize = 22f;
+            const float spacing = 2f;
+            const float textWidth = 50f;
+            Rect minusRect = new Rect(
+                controlRect.x,
+                controlRect.y + (controlRect.height - buttonSize) / 2f,
+                buttonSize,
+                buttonSize);
+            Rect plusRect = new Rect(
+                minusRect.xMax + spacing,
+                minusRect.y,
+                buttonSize,
+                buttonSize);
+            Rect textRect = new Rect(
+                plusRect.xMax + spacing,
+                minusRect.y,
+                textWidth,
+                buttonSize);
+
+            if (Widgets.ButtonText(minusRect, "-"))
+            {
+                value = value == int.MinValue ? int.MinValue : value - 1;
+                value = Mathf.Max(value, min);
+            }
+
+            if (Widgets.ButtonText(plusRect, "+"))
+            {
+                value = value == int.MaxValue ? int.MaxValue : value + 1;
+                value = Mathf.Min(value, max);
+            }
+
+            string buffer = value.ToString();
+            Widgets.TextFieldNumeric(textRect, ref value, ref buffer, min, max);
+
+            if (disabled)
+            {
+                GUI.enabled = previousEnabled;
+                GUI.color = previousColor;
+            }
+
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                TooltipHandler.TipRegion(rect, tooltip);
+            }
+
+            return original != value;
+        }
+
         /// <summary>
         /// Draws a styled section header.
         /// </summary>
-        public static void DrawHeader(Rect rect, string label, Color? color = null)
+        private static void DrawSectionHeader(
+            Rect rect,
+            Rect labelBounds,
+            string label,
+            Color? color)
         {
-            var oldFont = Text.Font;
-            var oldAnchor = Text.Anchor;
-            var oldColor = GUI.color;
-
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleLeft;
             Color accent = ResolveSectionAccent(color);
             GUI.color = accent;
-            Rect labelRect = new Rect(rect.x + 10f, rect.y, Mathf.Max(0f, rect.width - 10f), rect.height);
+            Rect labelRect = new Rect(
+                labelBounds.x + 10f,
+                rect.y,
+                Mathf.Max(0f, labelBounds.width - 10f),
+                rect.height);
             Widgets.Label(labelRect, label);
-            Widgets.DrawBoxSolid(new Rect(
-                labelRect.x,
-                rect.yMax - 4f,
-                labelRect.width,
-                2f), accent);
-
+            Widgets.DrawBoxSolid(
+                new Rect(labelRect.x, rect.yMax - 4f, labelRect.width, 2f),
+                accent);
             Text.Font = oldFont;
             Text.Anchor = oldAnchor;
             GUI.color = oldColor;
+        }
+
+        public static void DrawHeader(Rect rect, string label, Color? color = null)
+        {
+            DrawSectionHeader(rect, rect, label, color);
         }
 
         internal static void DrawSubheader(Rect rect, string label, Color? color = null)
@@ -431,6 +745,7 @@ namespace Spine.UI.SettingsFramework
             Text.Anchor = oldAnchor;
             GUI.color = oldColor;
         }
+
 
     }
 }

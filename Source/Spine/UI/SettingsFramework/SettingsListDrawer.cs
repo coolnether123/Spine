@@ -21,6 +21,8 @@ namespace Spine.UI.SettingsFramework
         private const float FocusHighlightSeconds = 1.45f;
         private const float SearchResultDoubleClickMaxSeconds = 0.25f;
         private const float SearchResultDoubleClickMoveTolerance = 5f;
+        private const float SuppressionNoticeHeight = 17f;
+        private const float SuppressionLinkGap = 6f;
 
         private static readonly Texture2D ResetIcon =
             ContentFinder<Texture2D>.Get("UI/Buttons/Dev/Reload");
@@ -110,6 +112,15 @@ namespace Spine.UI.SettingsFramework
         /// Tooltip for per-setting reset buttons.
         /// </summary>
         public string ResetToDefaultLabel { get; set; } = "Reset to default";
+
+        /// <summary>Color used for the explanation shown under a suppressed row.</summary>
+        public Color SuppressionNoticeColor { get; set; } = new Color(0.72f, 0.66f, 0.44f, 1f);
+
+        /// <summary>Color used for links shown in a suppression explanation.</summary>
+        public Color SuppressionLinkColor { get; set; } = new Color(0.62f, 0.76f, 1f, 1f);
+
+        /// <summary>Tooltip shown for a link to the setting suppressing a row.</summary>
+        public string SuppressionLinkTooltip { get; set; } = "Go to the setting that is overriding this one.";
 
         /// <summary>
         /// Pulse color used when a context jump or search double-click focuses a setting row.
@@ -565,8 +576,12 @@ namespace Spine.UI.SettingsFramework
                     ? Mathf.Max(depth, activeSectionDepth + 1)
                     : depth;
                 bool disabledByAncestor = _hierarchy.IsDisabledByAncestor(def, settingsObject);
+                SettingSuppression suppression = def.GetActiveSuppression(settingsObject);
+                SettingSuppression inheritedSuppression = suppression ??
+                    GetActiveAncestorSuppression(def, settingsObject);
                 bool allowFocusedDisabledInteraction =
-                    disabledByAncestor && IsFocusedForcedVisibleSetting(def);
+                    (disabledByAncestor || inheritedSuppression != null) &&
+                    IsFocusedForcedVisibleSetting(def);
 
                 float rowHeight = MeasureRowHeight(def, settingsObject);
                 Rect rowRect = new Rect(0f, curY, viewRect.width, rowHeight);
@@ -580,7 +595,9 @@ namespace Spine.UI.SettingsFramework
                     rowRect,
                     def,
                     settingsObject,
-                    disabledByAncestor && !allowFocusedDisabledInteraction,
+                    (disabledByAncestor || inheritedSuppression != null) &&
+                        !allowFocusedDisabledInteraction,
+                    suppression,
                     visualDepth,
                     activeSection?.HeaderColor,
                     onSettingsChanged);
@@ -715,15 +732,21 @@ namespace Spine.UI.SettingsFramework
                     rowHeight);
                 bool disabledByAncestor =
                     _hierarchy.IsDisabledByAncestor(def, settingsObject);
+                SettingSuppression suppression = def.GetActiveSuppression(settingsObject);
+                SettingSuppression inheritedSuppression = suppression ??
+                    GetActiveAncestorSuppression(def, settingsObject);
                 bool allowFocusedDisabledInteraction =
-                    disabledByAncestor && IsFocusedForcedVisibleSetting(def);
+                    (disabledByAncestor || inheritedSuppression != null) &&
+                    IsFocusedForcedVisibleSetting(def);
 
                 DrawFocusedSettingHighlight(rowRect, def, _hierarchy.GetDepth(def));
                 DrawSettingRow(
                     rowRect,
                     def,
                     settingsObject,
-                    disabledByAncestor && !allowFocusedDisabledInteraction,
+                    (disabledByAncestor || inheritedSuppression != null) &&
+                        !allowFocusedDisabledInteraction,
+                    suppression,
                     _hierarchy.GetDepth(def),
                     null,
                     onSettingsChanged);
@@ -739,11 +762,16 @@ namespace Spine.UI.SettingsFramework
             SettingDefinition def,
             object settingsObject,
             bool isDisabledByParent,
+            SettingSuppression suppression,
             int depth,
             Color? sectionColor,
             Action onSettingsChanged)
         {
-            Rect controlRow = rect;
+            string suppressionReason = suppression?.ResolveReason(settingsObject);
+            bool hasNotice = !string.IsNullOrEmpty(suppressionReason);
+            Rect controlRow = hasNotice
+                ? new Rect(rect.x, rect.y, rect.width, rect.height - SuppressionNoticeHeight)
+                : rect;
 
             float indent = depth * IndentPerLevel;
             Rect contentRect = new Rect(controlRow.x + indent, controlRow.y, controlRow.width - indent, controlRow.height);
@@ -752,7 +780,7 @@ namespace Spine.UI.SettingsFramework
                 Widgets.DrawHighlight(GetPanelRowRect(rect, def, depth));
             }
 
-            bool disabled = isDisabledByParent;
+            bool disabled = isDisabledByParent || suppression != null;
             string label = GetLabel?.Invoke(def) ?? def.Label ?? def.Id;
             string tooltip = BuildTooltip(def);
             if (def.Type == SettingType.Color)
@@ -812,15 +840,104 @@ namespace Spine.UI.SettingsFramework
                     if (field != null && field.FieldType == typeof(bool))
                     {
                         bool boolValue = (bool)field.GetValue(settingsObject);
-                        bool changed = SettingWidgets.DrawBool(
-                            contentRect,
-                            label,
-                            ref boolValue,
-                            tooltip,
-                            disabled);
+                        bool changed = def.EmphasizeAsHeader || def.ControlsChildVisibility
+                            ? SettingWidgets.DrawHeaderBool(
+                                contentRect,
+                                label,
+                                ref boolValue,
+                                sectionColor ?? def.HeaderColor,
+                                tooltip,
+                                disabled)
+                            : SettingWidgets.DrawBool(
+                                contentRect,
+                                label,
+                                ref boolValue,
+                                tooltip,
+                                disabled);
                         if (changed)
                         {
                             field.SetValue(settingsObject, boolValue);
+                            HandleSettingChanged(def, settingsObject, onSettingsChanged);
+                        }
+                    }
+                    break;
+                case SettingType.Int:
+                    if (field != null && field.FieldType == typeof(int))
+                    {
+                        int intValue = (int)field.GetValue(settingsObject);
+                        int min = def.MinValue.HasValue
+                            ? Mathf.RoundToInt(def.MinValue.Value)
+                            : int.MinValue;
+                        int max = def.MaxValue.HasValue
+                            ? Mathf.RoundToInt(def.MaxValue.Value)
+                            : int.MaxValue;
+                        if (min > max)
+                        {
+                            int temporary = min;
+                            min = max;
+                            max = temporary;
+                        }
+
+                        if (SettingWidgets.DrawInt(contentRect, label, ref intValue, min, max, tooltip, disabled))
+                        {
+                            field.SetValue(settingsObject, intValue);
+                            HandleSettingChanged(def, settingsObject, onSettingsChanged);
+                        }
+                    }
+                    break;
+                case SettingType.NumericInt:
+                    if (field != null && field.FieldType == typeof(int))
+                    {
+                        int intValue = (int)field.GetValue(settingsObject);
+                        int min = def.MinValue.HasValue
+                            ? Mathf.RoundToInt(def.MinValue.Value)
+                            : int.MinValue;
+                        int max = def.MaxValue.HasValue
+                            ? Mathf.RoundToInt(def.MaxValue.Value)
+                            : int.MaxValue;
+                        if (min > max)
+                        {
+                            int temporary = min;
+                            min = max;
+                            max = temporary;
+                        }
+
+                        if (SettingWidgets.DrawNumericInt(contentRect, label, ref intValue, min, max, tooltip, disabled))
+                        {
+                            field.SetValue(settingsObject, intValue);
+                            HandleSettingChanged(def, settingsObject, onSettingsChanged);
+                        }
+                    }
+                    break;
+                case SettingType.Float:
+                    if (field != null &&
+                        (field.FieldType == typeof(float) || field.FieldType == typeof(double)))
+                    {
+                        float floatValue = Convert.ToSingle(field.GetValue(settingsObject));
+                        float min = def.MinValue ?? 0f;
+                        float max = def.MaxValue ?? 1f;
+                        if (min > max)
+                        {
+                            float temporary = min;
+                            min = max;
+                            max = temporary;
+                        }
+
+                        if (SettingWidgets.DrawFloat(
+                                contentRect,
+                                label,
+                                ref floatValue,
+                                min,
+                                max,
+                                def.MinLabel,
+                                def.MaxLabel,
+                                def.ValueFormat,
+                                tooltip,
+                                disabled))
+                        {
+                            field.SetValue(settingsObject, field.FieldType == typeof(double)
+                                ? (object)(double)floatValue
+                                : floatValue);
                             HandleSettingChanged(def, settingsObject, onSettingsChanged);
                         }
                     }
@@ -912,6 +1029,18 @@ namespace Spine.UI.SettingsFramework
                     SettingWidgets.DrawHeader(contentRect, label, sectionColor ?? def.HeaderColor);
                     GUI.color = previousColor;
                     break;
+                case SettingType.Spacer:
+                    SettingWidgets.DrawSpacer(contentRect);
+                    break;
+                case SettingType.DropdownListAdder:
+                    SettingWidgets.DrawDropdownListAdder(
+                        contentRect,
+                        label,
+                        def.DropdownOptionsProvider,
+                        def.OnOptionAdded,
+                        tooltip,
+                        disabled);
+                    break;
                 case SettingType.Custom:
                     if (def.CustomDrawer != null &&
                         def.CustomDrawer(contentRect, label, tooltip, settingsObject, disabled))
@@ -919,6 +1048,19 @@ namespace Spine.UI.SettingsFramework
                         HandleSettingChanged(def, settingsObject, onSettingsChanged);
                     }
                     break;
+            }
+
+            if (hasNotice)
+            {
+                DrawSuppressionNotice(
+                    new Rect(
+                        controlRow.x + indent,
+                        controlRow.yMax,
+                        Mathf.Max(0f, rect.width - indent),
+                        SuppressionNoticeHeight),
+                    suppression,
+                    suppressionReason,
+                    settingsObject);
             }
 
             if (!string.IsNullOrEmpty(tooltip) &&
@@ -947,7 +1089,10 @@ namespace Spine.UI.SettingsFramework
 
         private float MeasureRowHeight(SettingDefinition def, object settingsObject)
         {
-            return RowHeight;
+            SettingSuppression suppression = def?.GetActiveSuppression(settingsObject);
+            bool hasNotice = suppression != null &&
+                !string.IsNullOrEmpty(suppression.ResolveReason(settingsObject));
+            return hasNotice ? RowHeight + SuppressionNoticeHeight : RowHeight;
         }
 
         private float MeasureTotalHeight(List<SettingDefinition> settings, object settingsObject)
@@ -995,6 +1140,141 @@ namespace Spine.UI.SettingsFramework
             }
 
             return tooltip;
+        }
+
+        private SettingSuppression GetActiveAncestorSuppression(
+            SettingDefinition setting,
+            object settingsObject)
+        {
+            foreach (SettingDefinition ancestor in _hierarchy.GetAncestors(setting))
+            {
+                SettingSuppression suppression = ancestor.GetActiveSuppression(settingsObject);
+                if (suppression != null)
+                {
+                    return suppression;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool HasExternalSuppressionAction(SettingSuppression suppression)
+        {
+            return suppression != null &&
+                !string.IsNullOrEmpty(suppression.ExternalActionUrl);
+        }
+
+        private void DrawSuppressionNotice(
+            Rect rect,
+            SettingSuppression suppression,
+            string reason,
+            object settingsObject)
+        {
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            bool oldWordWrap = Text.WordWrap;
+            Text.Font = GameFont.Tiny;
+            Text.WordWrap = false;
+
+            try
+            {
+                float reasonWidth = Mathf.Min(Text.CalcSize(reason).x, rect.width);
+                Rect reasonRect = new Rect(rect.x, rect.y, reasonWidth, rect.height);
+                GUI.color = SuppressionNoticeColor;
+                Widgets.Label(reasonRect, reason);
+
+                if (HasExternalSuppressionAction(suppression))
+                {
+                    string actionLabel = string.IsNullOrEmpty(suppression.ExternalActionLabel)
+                        ? "Open"
+                        : suppression.ExternalActionLabel;
+                    float actionWidth = Text.CalcSize(actionLabel).x;
+                    float actionX = reasonRect.xMax + SuppressionLinkGap;
+                    if (actionX + actionWidth <= rect.xMax)
+                    {
+                        Rect actionRect = new Rect(actionX, rect.y, actionWidth, rect.height);
+                        bool hovered = Mouse.IsOver(actionRect);
+                        GUI.color = hovered ? Color.white : SuppressionLinkColor;
+                        bool clicked = Widgets.ButtonText(
+                            actionRect,
+                            actionLabel,
+                            drawBackground: false,
+                            doMouseoverSound: true,
+                            textColor: GUI.color,
+                            active: true,
+                            overrideTextAnchor: TextAnchor.MiddleLeft);
+                        Widgets.DrawLineHorizontal(
+                            actionRect.x,
+                            actionRect.yMax - 3f,
+                            actionWidth);
+                        if (!string.IsNullOrEmpty(suppression.ExternalActionTooltip))
+                        {
+                            TooltipHandler.TipRegion(actionRect, suppression.ExternalActionTooltip);
+                        }
+
+                        if (clicked)
+                        {
+                            SteamUtility.OpenUrl(suppression.ExternalActionUrl);
+                        }
+                    }
+                }
+
+                SettingDefinition suppressor = _hierarchy.GetById(suppression.SuppressorSettingId);
+                if (suppressor == null)
+                {
+                    return;
+                }
+
+                string linkText = suppression.LinkLabel ??
+                    GetLabel?.Invoke(suppressor) ?? suppressor.Label ?? suppressor.Id;
+                float linkWidth = Text.CalcSize(linkText).x;
+                float linkX = rect.x + reasonWidth + SuppressionLinkGap;
+                if (linkX + linkWidth > rect.xMax)
+                {
+                    return;
+                }
+
+                Rect linkRect = new Rect(linkX, rect.y, linkWidth, rect.height);
+                bool linkHovered = Mouse.IsOver(linkRect);
+                GUI.color = linkHovered ? Color.white : SuppressionLinkColor;
+                Widgets.Label(linkRect, linkText);
+                Widgets.DrawLineHorizontal(linkRect.x, linkRect.yMax - 3f, linkWidth);
+                TooltipHandler.TipRegion(linkRect, SuppressionLinkTooltip);
+                if (Widgets.ButtonInvisible(linkRect))
+                {
+                    JumpToSuppressor(suppressor, settingsObject);
+                    Event.current?.Use();
+                }
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                Text.WordWrap = oldWordWrap;
+                GUI.color = oldColor;
+            }
+        }
+
+        private void JumpToSuppressor(
+            SettingDefinition suppressor,
+            object settingsObject)
+        {
+            if (suppressor == null)
+            {
+                return;
+            }
+
+            ClearSearch();
+            if (_activeFilter != null &&
+                !MatchesFilter(suppressor, settingsObject, _activeFilter))
+            {
+                ClearActiveFilter();
+            }
+
+            RevealDisabledAncestorChain(suppressor.Id);
+            _pendingFocusSettingId = suppressor.Id;
+            FocusSetting(suppressor.Id);
         }
 
         private List<SettingDefinition> BuildVisibleSettings(
@@ -1619,6 +1899,11 @@ namespace Spine.UI.SettingsFramework
                 return false;
             }
 
+            if (def.Type == SettingType.Custom)
+            {
+                return def.CustomReset != null && def.CustomHasNonDefaultValue != null;
+            }
+
             if (field == null || def.DefaultValue == null)
             {
                 return false;
@@ -1627,6 +1912,9 @@ namespace Spine.UI.SettingsFramework
             switch (def.Type)
             {
                 case SettingType.Bool:
+                case SettingType.Int:
+                case SettingType.NumericInt:
+                case SettingType.Float:
                 case SettingType.Color:
                 case SettingType.Enum:
                 case SettingType.Slider:
@@ -1641,6 +1929,11 @@ namespace Spine.UI.SettingsFramework
             if (settingsObject == null || def == null)
             {
                 return false;
+            }
+
+            if (def.Type == SettingType.Custom)
+            {
+                return def.CustomHasNonDefaultValue?.Invoke(settingsObject) ?? false;
             }
 
             if (field == null)
@@ -1685,6 +1978,17 @@ namespace Spine.UI.SettingsFramework
             if (settingsObject == null || def == null)
             {
                 return false;
+            }
+
+            if (def.Type == SettingType.Custom)
+            {
+                if (def.CustomReset == null)
+                {
+                    return false;
+                }
+
+                def.CustomReset(settingsObject);
+                return true;
             }
 
             if (field == null)

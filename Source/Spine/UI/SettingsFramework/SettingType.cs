@@ -26,6 +26,24 @@ namespace Spine.UI.SettingsFramework
         Custom,
 
         /// <summary>Continuous float value dragged between a minimum and maximum.</summary>
-        Slider
+        Slider,
+
+        /// <summary>Integer input with optional bounds.</summary>
+        Int,
+
+        /// <summary>Horizontal float input with optional bounds.</summary>
+        Float,
+
+        /// <summary>Empty space for visual separation.</summary>
+        Spacer,
+
+        /// <summary>
+        /// Dropdown action that offers options supplied at draw time and reports
+        /// the selected option to the consumer.
+        /// </summary>
+        DropdownListAdder,
+
+        /// <summary>Integer input with +/- buttons and a text field.</summary>
+        NumericInt
     }
 }

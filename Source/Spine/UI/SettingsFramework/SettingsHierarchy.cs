@@ -38,9 +38,9 @@ namespace Spine.UI.SettingsFramework
             }
 
             SettingCount = _byId.Values.Count(definition =>
-                definition.Type != SettingType.Header);
+                !IsNonConfigurable(definition));
             AdvancedOnlySettingCount = _byId.Values.Count(definition =>
-                definition.Type != SettingType.Header &&
+                !IsNonConfigurable(definition) &&
                 !definition.ShowInSimpleView &&
                 definition.ShowInAdvancedView);
 
@@ -350,6 +350,12 @@ namespace Spine.UI.SettingsFramework
             return viewMode == SettingsViewMode.Simple
                 ? def.ShowInSimpleView
                 : def.ShowInAdvancedView || def.ShowInSimpleView;
+        }
+
+        private static bool IsNonConfigurable(SettingDefinition definition)
+        {
+            return definition.Type == SettingType.Header ||
+                definition.Type == SettingType.Spacer;
         }
 
         private static bool ReadBoolValue(SettingDefinition def, object settingsObject)

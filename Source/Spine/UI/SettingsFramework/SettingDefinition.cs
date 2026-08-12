@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Spine.UI.SettingsFramework
@@ -126,6 +127,24 @@ namespace Spine.UI.SettingsFramework
         /// </summary>
         public object DefaultValue;
 
+        /// <summary>Optional lower bound for integer and float-style settings.</summary>
+        public float? MinValue;
+
+        /// <summary>Optional upper bound for integer and float-style settings.</summary>
+        public float? MaxValue;
+
+        /// <summary>Optional label shown at the lower end of a numeric control.</summary>
+        public string MinLabel;
+
+        /// <summary>Optional label shown at the upper end of a numeric control.</summary>
+        public string MaxLabel;
+
+        /// <summary>
+        /// Optional format string for a numeric readout. The value is supplied
+        /// as format argument zero.
+        /// </summary>
+        public string ValueFormat;
+
         /// <summary>
         /// Enum type for enum-based settings.
         /// </summary>
@@ -157,6 +176,34 @@ namespace Spine.UI.SettingsFramework
         public Func<object, bool> VisibleWhen;
 
         /// <summary>
+        /// Optional rules that disable this setting without hiding it.
+        /// </summary>
+        public List<SettingSuppression> Suppressions;
+
+        /// <summary>
+        /// Returns the first suppression currently in force, or null when the
+        /// setting is live.
+        /// </summary>
+        public SettingSuppression GetActiveSuppression(object settingsObject)
+        {
+            if (Suppressions == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < Suppressions.Count; i++)
+            {
+                SettingSuppression suppression = Suppressions[i];
+                if (suppression != null && suppression.IsActive(settingsObject))
+                {
+                    return suppression;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// When true and this is a boolean parent, children are disabled when the parent is unchecked.
         /// </summary>
         public bool ControlsChildVisibility;
@@ -167,6 +214,18 @@ namespace Spine.UI.SettingsFramework
         public bool RequiresRestart;
 
         /// <summary>
+        /// When true for a boolean row, the consumer may render it with header
+        /// emphasis while retaining toggle behavior.
+        /// </summary>
+        public bool EmphasizeAsHeader;
+
+        /// <summary>Supplies options for a dynamic dropdown action.</summary>
+        public Func<IEnumerable<string>> DropdownOptionsProvider;
+
+        /// <summary>Receives an option selected from a dynamic dropdown action.</summary>
+        public Action<string> OnOptionAdded;
+
+        /// <summary>
         /// Callback invoked when the value changes. Receives the settings object.
         /// </summary>
         public Action<object> OnChanged;
@@ -175,6 +234,12 @@ namespace Spine.UI.SettingsFramework
         /// Draws a custom row. Return true when the row changed settings.
         /// </summary>
         public Func<Rect, string, string, object, bool, bool> CustomDrawer;
+
+        /// <summary>Reports whether a custom row differs from its default state.</summary>
+        public Func<object, bool> CustomHasNonDefaultValue;
+
+        /// <summary>Restores a custom row to its default state.</summary>
+        public Action<object> CustomReset;
 
         /// <summary>
         /// Holds this entry outside the scrolling region so it stays visible while

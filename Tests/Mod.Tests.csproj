@@ -25,6 +25,10 @@
              Link="SettingsFramework\SettingType.cs" />
     <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingDefinition.cs"
              Link="SettingsFramework\SettingDefinition.cs" />
+    <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingSuppression.cs"
+             Link="SettingsFramework\SettingSuppression.cs" />
+    <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingsHierarchy.cs"
+             Link="SettingsFramework\SettingsHierarchy.cs" />
     <Compile Include="..\Source\Spine\UI\SettingsFramework\SettingDefinitions.cs"
              Link="SettingsFramework\SettingDefinitions.cs" />
   </ItemGroup>
