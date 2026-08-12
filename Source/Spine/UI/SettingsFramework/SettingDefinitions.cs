@@ -195,6 +195,18 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>
+        /// Returns a scope beneath an existing definition while preserving the
+        /// schema's shared definition collection and scribe-key convention.
+        /// </summary>
+        public SettingsScope<TSettings> Under(string nestedParentId)
+        {
+            return new SettingsScope<TSettings>(
+                definitions,
+                RequireId(nestedParentId),
+                scribeKeyConvention);
+        }
+
+        /// <summary>
         /// Adds a non-field definition to this scope. Consumers use the
         /// configuration callback for consumer-owned metadata and callbacks;
         /// Spine only supplies the shared definition plumbing.
@@ -479,15 +491,6 @@ namespace Spine.UI.SettingsFramework
             definition.Tooltip = tooltip;
             definition.ParentId = parentId;
             return Add(definition);
-        }
-
-        public SettingDefinition Button(
-            string id,
-            string label,
-            Action<TSettings> onChanged,
-            string tooltip = null)
-        {
-            return Button(id, label, tooltip, onChanged);
         }
 
         public SettingDefinition Spacer(
@@ -1219,6 +1222,21 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
+        /// <summary>Sets the localized label and tooltip keys for this definition.</summary>
+        public static SettingDefinition Localized(
+            this SettingDefinition definition,
+            string labelKey,
+            string tooltipKey)
+        {
+            if (definition != null)
+            {
+                definition.LabelKey = labelKey;
+                definition.TooltipKey = tooltipKey;
+            }
+
+            return definition;
+        }
+
         public static SettingDefinition WithScribeDefault(
             this SettingDefinition definition,
             object value)
@@ -1558,7 +1576,7 @@ namespace Spine.UI.SettingsFramework
         }
 
         /// <summary>Sets the custom-row reset hooks used by a consumer renderer.</summary>
-        public static SettingDefinition CustomReset(
+        public static SettingDefinition WithCustomReset(
             this SettingDefinition definition,
             Func<object, bool> hasNonDefaultValue,
             Action<object> reset)

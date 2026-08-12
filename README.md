@@ -137,6 +137,9 @@ section.Slider("size", s => s.Size, "Size", onChanged: s => Apply(s))
 section.Enum("mode", s => s.Mode, "Mode", labelProvider: value => value.ToString());
 section.Colour("color", s => s.Color, "Color");
 
+// Re-enter any existing parent without creating another header.
+schema.Root.Under("display").Toggle("preview", s => s.Preview, "Preview");
+
 SpineApi.Settings.Acquire(
     "MyMod", mod, settings, schema.Definitions, SaveSettings);
 ```
@@ -208,6 +211,8 @@ Available refinements, all in `SettingRefinements`, all chainable in any order:
 | `ShowsPercent()` | Slider | Reads a 0..1 value out as a whole percentage. |
 | `ShowsValue(fn)` | Slider | Any other readout: units, counts, a word. |
 | `AdvancedOnly()` | any | Hides the entry from the Simple view. |
+| `Localized(labelKey, tooltipKey)` | any | Sets the localized label and tooltip keys. |
+| `WithCustomReset(test, reset)` | Custom | Supplies the dirty check and reset action for a custom-rendered row. |
 | `ShownWhen(pred)` | any | Runtime visibility, evaluated against the settings object. |
 | `Pinned(pin)` | any | Holds the entry outside the scrolling region. |
 

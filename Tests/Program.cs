@@ -215,7 +215,8 @@ namespace Spine.Tests
                 "color",
                 settings => settings.Color,
                 "Color",
-                "Tooltip");
+                "Tooltip")
+                .Localized("ColorLabel", "ColorTooltip");
 
             Equal(5, schema.Definitions.Count,
                 "section header and four rows retain insertion order");
@@ -231,6 +232,10 @@ namespace Spine.Tests
                 "enum receives a convention key");
             Equal("color", colour.ScribeKey,
                 "colour receives a convention key");
+            Equal("ColorLabel", colour.LabelKey,
+                "localized refinement sets the label key");
+            Equal("ColorTooltip", colour.TooltipKey,
+                "localized refinement sets the tooltip key");
             Require(enabled.ControlsChildVisibility, "children refinement enabled");
             Equal(true, enabled.DefaultValue, "default refinement applied");
             Equal("showPreview",
@@ -252,6 +257,21 @@ namespace Spine.Tests
                 "Under adds no row of its own");
             Equal("parent", under.ParentId,
                 "Under scopes subsequent rows under its parent");
+
+            SettingDefinition nested = underSchema.Root.Under("nested-parent").Toggle(
+                "nested",
+                settings => settings.Enabled,
+                "Nested");
+            Equal("nested-parent", nested.ParentId,
+                "root scopes can create nested scopes directly");
+
+            bool resetCalled = false;
+            nested.WithCustomReset(_ => true, _ => resetCalled = true);
+            Require(nested.CustomHasNonDefaultValue(new SchemaSettings()),
+                "custom reset refinement stores the non-default predicate");
+            nested.CustomReset(new SchemaSettings());
+            Require(resetCalled,
+                "custom reset refinement stores the reset action");
 
             var nullConvention = new SettingsSchema<SchemaSettings>();
             SettingDefinition root = nullConvention.Root.Toggle(
