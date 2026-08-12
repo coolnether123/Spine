@@ -119,6 +119,73 @@ namespace Spine.UI.ContextualSettings
             ContextualSettingsBindingOptions options = default(ContextualSettingsBindingOptions));
     }
 
+    /// <summary>
+    /// Low-boilerplate bindings for the two common contextual-settings targets.
+    /// </summary>
+    public static class ContextualSettingsLeaseExtensions
+    {
+        public static bool BindSetting(
+            this IContextualSettingsLease lease,
+            Rect visibleRect,
+            string settingId,
+            string fallbackGroupId = null,
+            int priority = 0,
+            string featureTooltip = null)
+        {
+            if (!CanBind(lease, visibleRect, settingId))
+            {
+                return false;
+            }
+
+            return lease.Bind(
+                visibleRect,
+                ContextualSettingsTarget.Exact(settingId, fallbackGroupId),
+                Options(priority, featureTooltip));
+        }
+
+        public static bool BindSettingsGroup(
+            this IContextualSettingsLease lease,
+            Rect visibleRect,
+            string groupId,
+            int priority = 0,
+            string featureTooltip = null)
+        {
+            if (!CanBind(lease, visibleRect, groupId))
+            {
+                return false;
+            }
+
+            return lease.Bind(
+                visibleRect,
+                ContextualSettingsTarget.Group(groupId),
+                Options(priority, featureTooltip));
+        }
+
+        private static ContextualSettingsBindingOptions Options(
+            int priority,
+            string featureTooltip)
+        {
+            return string.IsNullOrWhiteSpace(featureTooltip)
+                ? ContextualSettingsBindingOptions.HintOnly(priority)
+                : ContextualSettingsBindingOptions.WithTooltip(
+                    featureTooltip,
+                    priority);
+        }
+
+        private static bool CanBind(
+            IContextualSettingsLease lease,
+            Rect visibleRect,
+            string id) =>
+            lease != null &&
+            !string.IsNullOrWhiteSpace(id) &&
+            !float.IsNaN(visibleRect.width) &&
+            !float.IsInfinity(visibleRect.width) &&
+            !float.IsNaN(visibleRect.height) &&
+            !float.IsInfinity(visibleRect.height) &&
+            visibleRect.width > 0f &&
+            visibleRect.height > 0f;
+    }
+
     public interface IContextualSettingsFacade
     {
         SpineApiDescriptor Descriptor { get; }

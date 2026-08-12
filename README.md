@@ -97,7 +97,9 @@ the current settings object plus contextual-settings lease through inherited
 static accessors. Consumers still own their definitions, persistence fields,
 gameplay startup, and Harmony owner ID. `SettingDefinitions` supplies compact
 factories; omitted defaults come from a fresh settings instance and omitted
-sort orders follow definition order. Mods without a settings page use
+sort orders follow definition order. The additive `SettingsSchema<TSettings>`
+API (Spine API 1.1.0, `SpineCapability.SettingsSchema`) owns ordered
+definitions and scopes them under optional headers. Mods without a settings page use
 `SpineApi.Runtime` and the individual facades directly.
 
 The lower-level `ModSettingsPages` facade remains available for unusual hosts.
@@ -118,6 +120,31 @@ settings; three or fewer advanced-only settings are shown in one unified page.
 
 `SettingDefinitions` supplies `Header`, `Toggle`, `Enum`, `Colour`, `Slider`,
 `Button`, and `Custom`.
+
+For typed field-backed settings, the schema API removes repeated field-name and
+parent wiring while keeping the existing definition and scribing runtime:
+
+```csharp
+var schema = new SettingsSchema<MySettings>(
+    SettingsSchemaConventions.LowerCamelCase);
+var section = schema.Section("display", "Display");
+section.Toggle("enabled", s => s.Enabled, "Enabled", "Tooltip")
+    .DefaultTo(true)
+    .ControlsChildren()
+    .ScribeAs("legacyEnabled");
+section.Slider("size", s => s.Size, "Size", onChanged: s => Apply(s))
+    .Range(0f, 1f);
+section.Enum("mode", s => s.Mode, "Mode", labelProvider: value => value.ToString());
+section.Colour("color", s => s.Color, "Color");
+
+SpineApi.Settings.Acquire(
+    "MyMod", mod, settings, schema.Definitions, SaveSettings);
+```
+
+Selectors must be direct fields (`s => s.Enabled`); properties, nested members,
+and method calls are rejected so the runtime continues to use its established
+field-based preparation and scribing behavior. Passing no convention keeps
+`ScribeKey` null, preserving the existing `FieldName` fallback.
 
 Every factory takes the same leading arguments — id, field name, fallback
 label, then optional translation keys — so a reader never has to work out which

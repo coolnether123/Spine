@@ -69,6 +69,12 @@ compact factories. Preparation derives omitted sort order from registry
 position and omitted defaults from a fresh `TSettings`; explicit scribe keys
 remain available for established save keys and migration aliases.
 
+`SettingsSchema<TSettings>` is an additive 1.1 builder over those same
+definitions. Its scopes append rows in declaration order and only `Section`
+adds a header; `Under` changes the parent target without adding a row. Typed
+selectors intentionally accept direct fields only, keeping property access and
+runtime reflection out of the public contract.
+
 Toolbar density is definition-driven inside the facade. Fewer than five
 configurable rows draw no search; ten or fewer use one unified view with no
 category or simple/advanced filters. Larger pages keep search, while

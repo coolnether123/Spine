@@ -25,6 +25,7 @@ namespace Spine.Tests
             Run("contextual scroll and highlight presentation", TestContextualPresentation);
             Run("compact settings presentation thresholds", TestSettingsPresentationPolicy);
             Run("settings preparation is lazy and idempotent", TestSettingsPreparation);
+            Run("typed settings schema builds compatible definitions", TestSettingsSchema);
             Run("contextual tooltips never add hints", TestContextualTooltipComposition);
 
             return Finish();
@@ -80,6 +81,8 @@ namespace Spine.Tests
                 "contextual-settings capability id is stable");
             Equal(1UL << 13, (ulong)SpineCapability.ModSettingsPages,
                 "settings-page capability id is stable");
+            Equal(1UL << 14, (ulong)SpineCapability.SettingsSchema,
+                "settings-schema capability id is stable");
 
             var descriptor = new SpineApiDescriptor(
                 "spine",
@@ -104,7 +107,8 @@ namespace Spine.Tests
                 SpineCapability.Settings |
                 SpineCapability.TooltipSizing |
                 SpineCapability.ContextualSettings |
-                SpineCapability.ModSettingsPages);
+                SpineCapability.ModSettingsPages |
+                SpineCapability.SettingsSchema);
             var runtime = SpineRuntimeFacade.Instance;
             var supported = runtime.Check(requirement);
             Require(
@@ -115,7 +119,7 @@ namespace Spine.Tests
                 runtime.Descriptor.ApiId,
                 "runtime facade API id");
             Equal(
-                new SemanticVersion(1, 0, 0),
+                new SemanticVersion(1, 1, 0),
                 runtime.Descriptor.Version,
                 "settings-page capability runtime version");
             var descriptorField = typeof(SpineRuntimeFacade).GetField(
@@ -176,6 +180,122 @@ namespace Spine.Tests
                 "prepared definitions do not create another pristine object");
         }
 
+        private static void TestSettingsSchema()
+        {
+            var schema = new SettingsSchema<SchemaSettings>(
+                SettingsSchemaConventions.LowerCamelCase);
+            SettingsScope<SchemaSettings> section = schema.Section(
+                "group",
+                "Group");
+            SettingDefinition enabled = section.Toggle(
+                    "enabled",
+                    settings => settings.Enabled,
+                    "Enabled",
+                    "Tooltip",
+                    onChanged: settings => settings.Changed++).
+                DefaultTo(true).
+                ControlsChildren().
+                ScribeAs("legacyKey");
+            SettingDefinition size = section.Slider(
+                "size",
+                settings => settings.Size,
+                "Size",
+                "Tooltip",
+                onChanged: settings => settings.Changed++).
+                Range(0f, 1f);
+            SettingDefinition mode = section.Enum(
+                "mode",
+                settings => settings.Mode,
+                "Mode",
+                "Tooltip",
+                labelProvider: value => value.ToString());
+            SettingDefinition colour = section.Colour(
+                "color",
+                settings => settings.Color,
+                "Color",
+                "Tooltip");
+
+            Equal(5, schema.Definitions.Count,
+                "section header and four rows retain insertion order");
+            Equal("group", schema.Definitions[0].Id,
+                "section creates a header row");
+            Equal("group", enabled.ParentId,
+                "section rows target the section header");
+            Equal("legacyKey", enabled.ScribeKey,
+                "explicit scribe refinement wins");
+            Equal("size", size.ScribeKey,
+                "lower-camel convention preserves an already lower-camel key");
+            Equal("mode", mode.ScribeKey,
+                "enum receives a convention key");
+            Equal("color", colour.ScribeKey,
+                "colour receives a convention key");
+            Require(enabled.ControlsChildVisibility, "children refinement enabled");
+            Equal(true, enabled.DefaultValue, "default refinement applied");
+            Equal("showPreview",
+                SettingsSchemaConventions.LowerCamelCase("ShowPreview"),
+                "lower-camel convention converts PascalCase fields");
+            Equal("Mode", mode.EnumLabelProvider(SchemaMode.Mode),
+                "typed enum label provider adapts to object callback");
+            var changedSettings = new SchemaSettings();
+            enabled.OnChanged(changedSettings);
+            Equal(1, changedSettings.Changed,
+                "typed change callback adapts to the runtime object callback");
+
+            var underSchema = new SettingsSchema<SchemaSettings>();
+            SettingDefinition under = underSchema.Under("parent").Toggle(
+                "under",
+                settings => settings.Enabled,
+                "Under");
+            Equal(1, underSchema.Definitions.Count,
+                "Under adds no row of its own");
+            Equal("parent", under.ParentId,
+                "Under scopes subsequent rows under its parent");
+
+            var nullConvention = new SettingsSchema<SchemaSettings>();
+            SettingDefinition root = nullConvention.Root.Toggle(
+                "root",
+                settings => settings.Enabled,
+                "Root");
+            Equal<string>(null, root.ScribeKey,
+                "null convention preserves null scribe-key behavior");
+
+            RequireRejectsSelector(
+                () => schema.Root.Toggle(
+                    "property",
+                    settings => settings.EnabledProperty,
+                    "Property"),
+                "property selector rejected");
+            RequireRejectsSelector(
+                () => schema.Root.Toggle(
+                    "nested",
+                    settings => settings.Nested.Enabled,
+                    "Nested"),
+                "nested selector rejected");
+            RequireRejectsSelector(
+                () => schema.Root.Toggle(
+                    "method",
+                    settings => settings.ReadEnabled(),
+                    "Method"),
+                "method selector rejected");
+        }
+
+        private static void RequireRejectsSelector(
+            Action action,
+            string description)
+        {
+            bool rejected = false;
+            try
+            {
+                action();
+            }
+            catch (ArgumentException)
+            {
+                rejected = true;
+            }
+
+            Require(rejected, description);
+        }
+
         private sealed class CountingSettings
         {
             internal static int ConstructorCalls;
@@ -186,6 +306,30 @@ namespace Spine.Tests
             }
 
             public bool Enabled = true;
+        }
+
+        private sealed class SchemaSettings
+        {
+            public bool Enabled;
+            public float Size;
+            public UnityEngine.Color Color;
+            public SchemaMode Mode;
+            public SchemaNested Nested = new SchemaNested();
+            public int Changed;
+
+            public bool EnabledProperty => Enabled;
+
+            public bool ReadEnabled() => Enabled;
+        }
+
+        private sealed class SchemaNested
+        {
+            public bool Enabled;
+        }
+
+        private enum SchemaMode
+        {
+            Mode
         }
 
         private static void TestPatchOperationIdentities()

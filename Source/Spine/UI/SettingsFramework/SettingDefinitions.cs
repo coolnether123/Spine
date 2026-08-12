@@ -1,11 +1,330 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using UnityEngine;
 using Verse;
 
 namespace Spine.UI.SettingsFramework
 {
+    /// <summary>
+    /// Convention helpers for the low-boilerplate settings schema API.
+    /// </summary>
+    public static class SettingsSchemaConventions
+    {
+        /// <summary>
+        /// Converts a field name such as <c>ShowPreview</c> to
+        /// <c>showPreview</c>. A null or empty name is preserved.
+        /// </summary>
+        public static string LowerCamelCase(string fieldName)
+        {
+            if (string.IsNullOrEmpty(fieldName) || !char.IsUpper(fieldName[0]))
+            {
+                return fieldName;
+            }
+
+            if (fieldName.Length == 1)
+            {
+                return fieldName.ToLowerInvariant();
+            }
+
+            int uppercasePrefixLength = 1;
+            while (uppercasePrefixLength < fieldName.Length &&
+                   char.IsUpper(fieldName[uppercasePrefixLength]))
+            {
+                uppercasePrefixLength++;
+            }
+
+            if (uppercasePrefixLength == fieldName.Length)
+            {
+                return fieldName.ToLowerInvariant();
+            }
+
+            int charactersToLower = uppercasePrefixLength == 1
+                ? 1
+                : uppercasePrefixLength - 1;
+            return fieldName.Substring(0, charactersToLower).ToLowerInvariant() +
+                fieldName.Substring(charactersToLower);
+        }
+    }
+
+    /// <summary>
+    /// Ordered settings-definition builder for one settings type.
+    /// </summary>
+    public sealed class SettingsSchema<TSettings>
+    {
+        private readonly List<SettingDefinition> definitions =
+            new List<SettingDefinition>();
+        private readonly IReadOnlyList<SettingDefinition> readOnlyDefinitions;
+        private readonly Func<string, string> scribeKeyConvention;
+
+        public SettingsSchema(Func<string, string> scribeKeyConvention = null)
+        {
+            this.scribeKeyConvention = scribeKeyConvention;
+            readOnlyDefinitions = definitions.AsReadOnly();
+            Root = new SettingsScope<TSettings>(
+                definitions,
+                parentId: null,
+                scribeKeyConvention);
+        }
+
+        public IReadOnlyList<SettingDefinition> Definitions => readOnlyDefinitions;
+
+        public SettingsScope<TSettings> Root { get; }
+
+        /// <summary>
+        /// Scribes this schema through Spine's existing settings facade.
+        /// Consumer-owned settings types retain control over when this is called.
+        /// </summary>
+        public void Scribe(TSettings settings)
+        {
+            Spine.Api.SpineApi.Settings.Scribe(settings, readOnlyDefinitions);
+        }
+
+        public SettingsScope<TSettings> Section(
+            string id,
+            string label,
+            string labelKey = null)
+        {
+            SettingDefinition header = SettingDefinitions.Header(
+                RequireId(id),
+                label,
+                labelKey);
+            definitions.Add(header);
+            return new SettingsScope<TSettings>(
+                definitions,
+                header.Id,
+                scribeKeyConvention);
+        }
+
+        public SettingsScope<TSettings> Under(string parentId)
+        {
+            return new SettingsScope<TSettings>(
+                definitions,
+                RequireId(parentId),
+                scribeKeyConvention);
+        }
+
+        private static string RequireId(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new ArgumentException(
+                    "A settings definition identifier is required.",
+                    nameof(id));
+            }
+
+            return id;
+        }
+    }
+
+    /// <summary>
+    /// Adds typed field-backed definitions to a <see cref="SettingsSchema{TSettings}"/>.
+    /// </summary>
+    public sealed class SettingsScope<TSettings>
+    {
+        private readonly List<SettingDefinition> definitions;
+        private readonly string parentId;
+        private readonly Func<string, string> scribeKeyConvention;
+
+        internal SettingsScope(
+            List<SettingDefinition> definitions,
+            string parentId,
+            Func<string, string> scribeKeyConvention)
+        {
+            this.definitions = definitions;
+            this.parentId = parentId;
+            this.scribeKeyConvention = scribeKeyConvention;
+        }
+
+        public SettingDefinition Toggle(
+            string id,
+            Expression<Func<TSettings, bool>> field,
+            string label,
+            string tooltip = null,
+            Action<TSettings> onChanged = null)
+        {
+            string fieldName = SettingSelector.FieldName(field);
+            SettingDefinition definition = SettingDefinitions.Toggle(
+                RequireId(id),
+                fieldName,
+                label,
+                tooltip: tooltip,
+                parentId: parentId,
+                scribeKey: ScribeKey(fieldName),
+                onChanged: Adapt(onChanged));
+            return Add(definition);
+        }
+
+        public SettingDefinition Slider(
+            string id,
+            Expression<Func<TSettings, float>> field,
+            string label,
+            string tooltip = null,
+            Action<TSettings> onChanged = null)
+        {
+            string fieldName = SettingSelector.FieldName(field);
+            return Slider(id, fieldName, label, tooltip, onChanged);
+        }
+
+        public SettingDefinition Slider(
+            string id,
+            string fieldName,
+            string label,
+            string tooltip = null,
+            Action<TSettings> onChanged = null)
+        {
+            fieldName = RequireFieldName(fieldName);
+            SettingDefinition definition = SettingDefinitions.Slider(
+                RequireId(id),
+                fieldName,
+                label,
+                tooltip: tooltip,
+                parentId: parentId,
+                scribeKey: ScribeKey(fieldName),
+                onChanged: Adapt(onChanged));
+            return Add(definition);
+        }
+
+        public SettingDefinition Colour(
+            string id,
+            Expression<Func<TSettings, Color>> field,
+            string label,
+            string tooltip = null,
+            Action<TSettings> onChanged = null)
+        {
+            string fieldName = SettingSelector.FieldName(field);
+            SettingDefinition definition = SettingDefinitions.Colour(
+                RequireId(id),
+                fieldName,
+                label,
+                scribeKey: ScribeKey(fieldName));
+            definition.Tooltip = tooltip;
+            definition.ParentId = parentId;
+            definition.OnChanged = Adapt(onChanged);
+            return Add(definition);
+        }
+
+        public SettingDefinition Enum<TEnum>(
+            string id,
+            Expression<Func<TSettings, TEnum>> field,
+            string label,
+            string tooltip = null,
+            Func<TEnum, string> labelProvider = null,
+            Func<TEnum, string> descriptionProvider = null,
+            Action<TSettings> onChanged = null)
+            where TEnum : struct
+        {
+            if (!typeof(TEnum).IsEnum)
+            {
+                throw new ArgumentException(
+                    "The typed settings enum must be an enum type.",
+                    nameof(field));
+            }
+
+            string fieldName = SettingSelector.FieldName(field);
+            SettingDefinition definition = SettingDefinitions.Enum(
+                RequireId(id),
+                fieldName,
+                typeof(TEnum),
+                label,
+                tooltip: tooltip,
+                parentId: parentId,
+                scribeKey: ScribeKey(fieldName),
+                labelProvider: Adapt(labelProvider),
+                descriptionProvider: Adapt(descriptionProvider));
+            definition.OnChanged = Adapt(onChanged);
+            return Add(definition);
+        }
+
+        private SettingDefinition Add(SettingDefinition definition)
+        {
+            definitions.Add(definition);
+            return definition;
+        }
+
+        private string ScribeKey(string fieldName)
+        {
+            return scribeKeyConvention == null
+                ? null
+                : scribeKeyConvention(fieldName);
+        }
+
+        private static Action<object> Adapt(Action<TSettings> callback)
+        {
+            return callback == null
+                ? null
+                : settings => callback((TSettings)settings);
+        }
+
+        private static Func<object, string> Adapt<TValue>(
+            Func<TValue, string> callback)
+        {
+            return callback == null
+                ? null
+                : value => callback((TValue)value);
+        }
+
+        private static string RequireId(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new ArgumentException(
+                    "A settings definition identifier is required.",
+                    nameof(id));
+            }
+
+            return id;
+        }
+
+        private static string RequireFieldName(string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(fieldName))
+            {
+                throw new ArgumentException(
+                    "A settings field name is required.",
+                    nameof(fieldName));
+            }
+
+            return fieldName;
+        }
+    }
+
+    internal static class SettingSelector
+    {
+        private const string DirectFieldMessage =
+            "A settings selector must be a direct field access such as " +
+            "settings => settings.Enabled; properties, nested members, and " +
+            "method calls are not supported.";
+
+        internal static string FieldName<TSettings, TValue>(
+            Expression<Func<TSettings, TValue>> selector)
+        {
+            if (selector == null)
+            {
+                throw new ArgumentNullException(nameof(selector));
+            }
+
+            MemberExpression member = selector.Body as MemberExpression;
+            FieldInfo field = member?.Member as FieldInfo;
+            if (field == null || member.Expression != selector.Parameters[0])
+            {
+                throw new ArgumentException(DirectFieldMessage, nameof(selector));
+            }
+
+            if (field.FieldType != typeof(TValue))
+            {
+                throw new ArgumentException(
+                    "The settings selector field '" + field.Name +
+                    "' has type " + field.FieldType.FullName +
+                    ", not " + typeof(TValue).FullName + ".",
+                    nameof(selector));
+            }
+
+            return field.Name;
+        }
+    }
+
     /// <summary>
     /// Compact constructors for the standard settings rows shared by consumer
     /// mods. Gameplay meaning and callbacks remain consumer-owned.
@@ -358,6 +677,44 @@ namespace Spine.UI.SettingsFramework
     /// </summary>
     public static class SettingRefinements
     {
+        /// <summary>Sets the reset and absent-key default for this definition.</summary>
+        public static SettingDefinition DefaultTo(
+            this SettingDefinition definition,
+            object value)
+        {
+            if (definition != null)
+            {
+                definition.DefaultValue = value;
+            }
+
+            return definition;
+        }
+
+        /// <summary>Marks this setting as controlling the visibility of its children.</summary>
+        public static SettingDefinition ControlsChildren(
+            this SettingDefinition definition)
+        {
+            if (definition != null)
+            {
+                definition.ControlsChildVisibility = true;
+            }
+
+            return definition;
+        }
+
+        /// <summary>Uses a specific persisted key for this definition.</summary>
+        public static SettingDefinition ScribeAs(
+            this SettingDefinition definition,
+            string key)
+        {
+            if (definition != null)
+            {
+                definition.ScribeKey = key;
+            }
+
+            return definition;
+        }
+
         /// <summary>Holds this entry outside the scrolling region.</summary>
         public static SettingDefinition Pinned(
             this SettingDefinition definition,

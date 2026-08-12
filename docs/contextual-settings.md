@@ -1,7 +1,7 @@
 # Contextual settings capability
 
-Spine runtime 1.0 exposes `SpineApi.ContextualSettings` with capability ID
-`CoolNether123.Spine.ContextualSettings` version 1.0. Consumers negotiate
+Spine runtime 1.1 exposes `SpineApi.ContextualSettings` with capability ID
+`CoolNether123.Spine.ContextualSettings` version 1.1. Consumers negotiate
 `SpineCapability.ContextualSettings`, acquire one lease for the mod lifetime,
 and call `Bind` where a visible immediate-mode rectangle is known.
 
@@ -11,6 +11,18 @@ lease.Bind(
     ContextualSettingsTarget.Exact("display.format", "display.header"),
     ContextualSettingsBindingOptions.WithTooltip(featureTooltip));
 ```
+
+The common bindings can use the additive extension methods and retain the same
+target and tooltip behavior:
+
+```csharp
+lease.BindSetting(rect, "display.format", "display.header", 0, featureTooltip);
+lease.BindSettingsGroup(rect, "display.header", 0, featureTooltip);
+```
+
+These helpers safely ignore a null lease, blank target ID, or non-positive rectangle.
+An empty feature tooltip selects `HintOnly`; non-empty text selects
+`WithTooltip`. Both methods delegate to the unchanged `Bind` contract.
 
 Exact targets fall back to the named group, then to the mod settings root. A
 context jump always clears search and explicit filters, shows the ordinary
@@ -31,7 +43,9 @@ an existing feature tooltip once. Spine does not append or register an
 “Alt-click” hint over gameplay UI. The convention is documented in mod
 documentation instead of repeated across world labels, overlays, and
 controls. The older hint fields remain binary-compatible but are presentation
-no-ops in the current 1.0 capability.
+no-ops in the current 1.1 capability. Existing consumers may continue
+negotiating the 1.0 minimum; the additive helpers are available when
+`SpineCapability.ContextualSettings` is present.
 
 The shared settings drawer adapts its toolbar to the number of configurable
 rows. Below five settings it shows only section headers and rows. From five

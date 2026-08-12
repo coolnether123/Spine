@@ -10,7 +10,7 @@ namespace Spine.Api
         private static readonly SpineApiDescriptor CurrentDescriptor =
             new SpineApiDescriptor(
                 "CoolNether123.Spine",
-                new SemanticVersion(1, 0, 0),
+                new SemanticVersion(1, 1, 0),
                 SpineCapability.BoundedCaches |
                 SpineCapability.Settings |
                 SpineCapability.HarmonyPatching |
@@ -21,7 +21,8 @@ namespace Spine.Api
                     : SpineCapability.FluentTranspilers) |
                 SpineCapability.TooltipSizing |
                 SpineCapability.ContextualSettings |
-                SpineCapability.ModSettingsPages);
+                SpineCapability.ModSettingsPages |
+                SpineCapability.SettingsSchema);
 
         private SpineRuntimeFacade()
         {
