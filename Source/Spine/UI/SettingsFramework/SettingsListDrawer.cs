@@ -1126,12 +1126,21 @@ namespace Spine.UI.SettingsFramework
                     }
                     break;
                 case SettingType.Enum:
-                    if (field != null && def.EnumType != null)
+                    if ((field != null || def.ValueGetter != null) && def.EnumType != null)
                     {
-                        object current = field.GetValue(settingsObject);
+                        object current = def.ValueGetter != null
+                            ? def.ValueGetter(settingsObject)
+                            : field.GetValue(settingsObject);
                         SettingWidgets.DrawEnum(contentRect, label, current, def.EnumType, tooltip, disabled, selected =>
                         {
-                            field.SetValue(settingsObject, selected);
+                            if (def.ValueSetter != null)
+                            {
+                                def.ValueSetter(settingsObject, selected);
+                            }
+                            else
+                            {
+                                field.SetValue(settingsObject, selected);
+                            }
                             HandleSettingChanged(def, settingsObject, onSettingsChanged);
                             NotifySettingPreview(def, settingsObject, field);
                         }, def.EnumLabelProvider, def.EnumDescriptionProvider);
@@ -1173,6 +1182,14 @@ namespace Spine.UI.SettingsFramework
                         HandleSettingChanged(def, settingsObject, onSettingsChanged);
                         NotifySettingPreview(def, settingsObject, null);
                     }
+                    break;
+                case SettingType.ReadOnly:
+                    SettingWidgets.DrawReadOnly(
+                        contentRect,
+                        label,
+                        def.ReadOnlyValueProvider?.Invoke(settingsObject),
+                        tooltip,
+                        disabled);
                     break;
             }
 
@@ -1226,9 +1243,11 @@ namespace Spine.UI.SettingsFramework
                 return;
             }
 
-            object currentValue = field != null
-                ? field.GetValue(settingsObject)
-                : settingsObject;
+            object currentValue = definition.ValueGetter != null
+                ? definition.ValueGetter(settingsObject)
+                : field != null
+                    ? field.GetValue(settingsObject)
+                    : settingsObject;
             OnSettingPreview(definition, settingsObject, currentValue);
         }
 
@@ -2284,6 +2303,11 @@ namespace Spine.UI.SettingsFramework
                 return def.CustomReset != null && def.CustomHasNonDefaultValue != null;
             }
 
+            if (def.ValueGetter != null && def.ValueSetter != null)
+            {
+                return def.DefaultValue != null && def.Type == SettingType.Enum;
+            }
+
             if (field == null || def.DefaultValue == null)
             {
                 return false;
@@ -2314,6 +2338,11 @@ namespace Spine.UI.SettingsFramework
             if (def.Type == SettingType.Custom)
             {
                 return def.CustomHasNonDefaultValue?.Invoke(settingsObject) ?? false;
+            }
+
+            if (def.ValueGetter != null)
+            {
+                return !ValuesEqual(def.ValueGetter(settingsObject), def.DefaultValue);
             }
 
             if (field == null)
@@ -2368,6 +2397,12 @@ namespace Spine.UI.SettingsFramework
                 }
 
                 def.CustomReset(settingsObject);
+                return true;
+            }
+
+            if (def.ValueSetter != null && def.DefaultValue != null)
+            {
+                def.ValueSetter(settingsObject, def.DefaultValue);
                 return true;
             }
 

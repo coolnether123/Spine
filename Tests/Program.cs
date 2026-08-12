@@ -269,6 +269,25 @@ namespace Spine.Tests
             Equal("nested-parent", nested.ParentId,
                 "root scopes can create nested scopes directly");
 
+            SettingDefinition derived = underSchema.Root.DerivedEnum(
+                "derived",
+                settings => settings.Mode,
+                (settings, value) => settings.Mode = value,
+                "Derived mode",
+                labelProvider: value => "Derived:" + value);
+            SettingDefinition readOnly = underSchema.Root.ReadOnly(
+                "summary",
+                settings => settings.Mode.ToString(),
+                "Summary");
+            var derivedSettings = new SchemaSettings();
+            derived.ValueSetter(derivedSettings, SchemaMode.Mode);
+            Equal(SchemaMode.Mode, derived.ValueGetter(derivedSettings),
+                "derived enum adapts typed getter and setter callbacks");
+            Equal("Derived:Mode", derived.EnumLabelProvider(SchemaMode.Mode),
+                "derived enum retains its typed label provider");
+            Equal("Mode", readOnly.ReadOnlyValueProvider(derivedSettings),
+                "read-only row adapts its typed value provider");
+
             bool resetCalled = false;
             nested.WithCustomReset(_ => true, _ => resetCalled = true);
             Require(nested.CustomHasNonDefaultValue(new SchemaSettings()),
@@ -315,6 +334,8 @@ namespace Spine.Tests
                 "new dropdown enum value appended");
             Equal(11, (int)SettingType.NumericInt,
                 "new numeric-integer enum value appended");
+            Equal(12, (int)SettingType.ReadOnly,
+                "read-only enum value appended");
 
             var schema = new SettingsSchema<SchemaSettings>(
                 SettingsSchemaConventions.LowerCamelCase);

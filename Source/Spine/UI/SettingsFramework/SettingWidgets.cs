@@ -75,7 +75,16 @@ namespace Spine.UI.SettingsFramework
                 Mathf.Max(0f, checkboxRect.x - rect.x - 8f),
                 rect.height);
 
-            DrawSectionHeader(rect, labelRect, label, headerColor);
+            Color accent = ResolveSectionAccent(headerColor);
+            Widgets.DrawBoxSolid(
+                new Rect(rect.x + 4f, rect.y + 5f, 3f, Mathf.Max(0f, rect.height - 10f)),
+                accent);
+            Rect toggleLabelRect = new Rect(
+                labelRect.x + 14f,
+                labelRect.y,
+                Mathf.Max(0f, labelRect.width - 14f),
+                labelRect.height);
+            DrawSettingLabel(toggleLabelRect, label, disabled);
             Widgets.Checkbox(checkboxRect.x, checkboxRect.y, ref value, checkboxSize, disabled);
             if (!disabled && Widgets.ButtonInvisible(labelRect))
             {
@@ -88,6 +97,36 @@ namespace Spine.UI.SettingsFramework
             }
 
             return original != value;
+        }
+
+        /// <summary>Draws a non-interactive label and value pair.</summary>
+        public static void DrawReadOnly(
+            Rect rect,
+            string label,
+            string value,
+            string tooltip = null,
+            bool disabled = false)
+        {
+            Rect valueRect = rect.RightPart(0.48f);
+            Rect labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, valueRect.x - rect.x - 6f),
+                rect.height);
+            DrawSettingLabel(labelRect, label, disabled);
+
+            Color previousColor = GUI.color;
+            TextAnchor previousAnchor = Text.Anchor;
+            GUI.color = disabled ? Color.gray : SettingLabelColor;
+            Text.Anchor = TextAnchor.MiddleRight;
+            Widgets.Label(valueRect, value ?? string.Empty);
+            Text.Anchor = previousAnchor;
+            GUI.color = previousColor;
+
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                TooltipHandler.TipRegion(rect, tooltip);
+            }
         }
 
         /// <summary>

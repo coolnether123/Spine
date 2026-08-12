@@ -173,6 +173,15 @@ namespace Spine.UI.SettingsFramework
         public Func<object, string> EnumDescriptionProvider;
 
         /// <summary>
+        /// Optional value accessors for a derived setting backed by more than one field.
+        /// </summary>
+        public Func<object, object> ValueGetter;
+        public Action<object, object> ValueSetter;
+
+        /// <summary>Supplies the displayed value for a read-only information row.</summary>
+        public Func<object, string> ReadOnlyValueProvider;
+
+        /// <summary>
         /// If true, the setting is visible in the Simple view.
         /// </summary>
         public bool ShowInSimpleView;
