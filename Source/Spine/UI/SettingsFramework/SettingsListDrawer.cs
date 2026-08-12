@@ -595,7 +595,7 @@ namespace Spine.UI.SettingsFramework
             for (int index = 0; index < _scrollingSettings.Count; index++)
             {
                 SettingDefinition candidate = _scrollingSettings[index];
-                if (candidate.Type == SettingType.Header)
+                if (StartsSectionPanel(candidate))
                 {
                     if (panelSection != null)
                     {
@@ -626,8 +626,8 @@ namespace Spine.UI.SettingsFramework
             foreach (var def in _scrollingSettings)
             {
                 int depth = _hierarchy.GetDepth(def);
-                bool isSectionHeader = def.Type == SettingType.Header;
-                bool belongsToActiveSection = !isSectionHeader && activeSection != null;
+                bool startsSectionPanel = StartsSectionPanel(def);
+                bool belongsToActiveSection = !startsSectionPanel && activeSection != null;
                 int visualDepth = belongsToActiveSection
                     ? Mathf.Max(depth, activeSectionDepth + 1)
                     : depth;
@@ -662,7 +662,7 @@ namespace Spine.UI.SettingsFramework
                     visualDepth,
                     activeSection?.HeaderColor,
                     onSettingsChanged);
-                if (isSectionHeader)
+                if (startsSectionPanel)
                 {
                     activeSection = def;
                     activeSectionDepth = depth;
@@ -677,6 +677,14 @@ namespace Spine.UI.SettingsFramework
             }
 
             Widgets.EndScrollView();
+        }
+
+        private static bool StartsSectionPanel(SettingDefinition definition)
+        {
+            return definition != null &&
+                (definition.Type == SettingType.Header ||
+                 definition.Type == SettingType.Bool &&
+                 (definition.EmphasizeAsHeader || definition.ControlsChildVisibility));
         }
 
         /// <summary>
