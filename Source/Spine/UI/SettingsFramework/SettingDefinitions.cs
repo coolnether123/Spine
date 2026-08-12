@@ -1219,6 +1219,114 @@ namespace Spine.UI.SettingsFramework
             return definition;
         }
 
+        public static SettingDefinition WithScribeDefault(
+            this SettingDefinition definition,
+            object value)
+        {
+            if (definition != null)
+            {
+                definition.ScribeDefaultOverride = value;
+            }
+
+            return definition;
+        }
+
+        public static SettingDefinition WithoutAutoScribe(
+            this SettingDefinition definition)
+        {
+            if (definition != null)
+            {
+                definition.DisableAutoScribe = true;
+            }
+
+            return definition;
+        }
+
+        public static SettingDefinition ClassifiedAs(
+            this SettingDefinition definition,
+            SettingClassification classification)
+        {
+            if (definition != null)
+            {
+                definition.Classification = classification;
+            }
+
+            return definition;
+        }
+
+        public static SettingDefinition Under(
+            this SettingDefinition definition,
+            string parentId)
+        {
+            if (definition != null)
+            {
+                definition.ParentId = parentId;
+            }
+
+            return definition;
+        }
+
+        public static SettingDefinition Ordered(
+            this SettingDefinition definition,
+            int sortOrder)
+        {
+            if (definition != null)
+            {
+                definition.SortOrder = sortOrder;
+            }
+
+            return definition;
+        }
+
+        public static SettingDefinition SearchableBy(
+            this SettingDefinition definition,
+            params string[] keywords)
+        {
+            if (definition != null)
+            {
+                definition.SearchKeywords = keywords;
+            }
+
+            return definition;
+        }
+
+        public static SettingDefinition ShownIn(
+            this SettingDefinition definition,
+            bool simple,
+            bool advanced = true)
+        {
+            if (definition != null)
+            {
+                definition.ShowInSimpleView = simple;
+                definition.ShowInAdvancedView = advanced;
+            }
+
+            return definition;
+        }
+
+        public static SettingDefinition Accented(
+            this SettingDefinition definition,
+            Color color)
+        {
+            if (definition != null)
+            {
+                definition.HeaderColor = color;
+            }
+
+            return definition;
+        }
+
+        public static SettingDefinition RestartRequired(
+            this SettingDefinition definition)
+        {
+            if (definition != null)
+            {
+                definition.RequiresRestart = true;
+            }
+
+            return definition;
+        }
+
         /// <summary>Holds this entry outside the scrolling region.</summary>
         public static SettingDefinition Pinned(
             this SettingDefinition definition,
