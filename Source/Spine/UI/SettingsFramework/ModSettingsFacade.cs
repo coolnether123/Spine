@@ -61,11 +61,12 @@ namespace Spine.UI.SettingsFramework
         private static readonly SpineApiDescriptor CurrentDescriptor =
             new SpineApiDescriptor(
                 "CoolNether123.Spine.ModSettingsPages",
-                new SemanticVersion(1, 1, 0),
+                new SemanticVersion(1, 1, 1),
                 SpineCapability.Settings |
                 SpineCapability.ContextualSettings |
                 SpineCapability.ModSettingsPages |
-                SpineCapability.SettingsSchema);
+                SpineCapability.SettingsSchema |
+                SpineCapability.SettingsPreviewTransactions);
 
         private ModSettingsFacade()
         {

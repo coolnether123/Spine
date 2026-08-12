@@ -85,6 +85,8 @@ namespace Spine.Tests
                 "settings-page capability id is stable");
             Equal(1UL << 14, (ulong)SpineCapability.SettingsSchema,
                 "settings-schema capability id is stable");
+            Equal(1UL << 15, (ulong)SpineCapability.SettingsPreviewTransactions,
+                "settings-preview transaction capability id is stable");
 
             var descriptor = new SpineApiDescriptor(
                 "spine",
@@ -110,7 +112,8 @@ namespace Spine.Tests
                 SpineCapability.TooltipSizing |
                 SpineCapability.ContextualSettings |
                 SpineCapability.ModSettingsPages |
-                SpineCapability.SettingsSchema);
+                SpineCapability.SettingsSchema |
+                SpineCapability.SettingsPreviewTransactions);
             var runtime = SpineRuntimeFacade.Instance;
             var supported = runtime.Check(requirement);
             Require(
@@ -121,7 +124,7 @@ namespace Spine.Tests
                 runtime.Descriptor.ApiId,
                 "runtime facade API id");
             Equal(
-                new SemanticVersion(1, 1, 0),
+                new SemanticVersion(1, 1, 1),
                 runtime.Descriptor.Version,
                 "settings-page capability runtime version");
             var descriptorField = typeof(SpineRuntimeFacade).GetField(
