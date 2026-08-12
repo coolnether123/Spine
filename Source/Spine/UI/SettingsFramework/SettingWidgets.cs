@@ -11,6 +11,9 @@ namespace Spine.UI.SettingsFramework
     /// </summary>
     public static class SettingWidgets
     {
+        private static readonly Color SettingLabelColor = new Color(0.78f, 0.77f, 0.74f);
+        private static readonly Color DefaultSectionAccent = new Color(0.9f, 0.85f, 0.7f);
+
         /// <summary>
         /// Draws a checkbox setting with optional tooltip and disabled state.
         /// </summary>
@@ -22,7 +25,23 @@ namespace Spine.UI.SettingsFramework
             bool disabled = false)
         {
             bool original = value;
-            Widgets.CheckboxLabeled(rect, label, ref value, disabled);
+            const float checkboxSize = 24f;
+            Rect checkboxRect = new Rect(
+                rect.xMax - checkboxSize,
+                rect.y + ((rect.height - checkboxSize) / 2f),
+                checkboxSize,
+                checkboxSize);
+            Rect labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, checkboxRect.x - rect.x - 6f),
+                rect.height);
+            DrawSettingLabel(labelRect, label, disabled);
+            Widgets.Checkbox(checkboxRect.x, checkboxRect.y, ref value, checkboxSize, disabled);
+            if (!disabled && Widgets.ButtonInvisible(labelRect))
+            {
+                value = !value;
+            }
 
             if (!string.IsNullOrEmpty(tooltip))
             {
@@ -44,11 +63,15 @@ namespace Spine.UI.SettingsFramework
             Action<Color, Action<Color>> openColorPicker = null,
             string editLabel = "Edit")
         {
-            var labelRect = rect.LeftPart(0.6f);
             var colorRect = new Rect(rect.xMax - 96f, rect.y + 2f, 28f, rect.height - 4f);
             var buttonRect = new Rect(colorRect.xMax + 4f, rect.y + 2f, 60f, rect.height - 4f);
+            var labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, colorRect.x - rect.x - 6f),
+                rect.height);
 
-            Widgets.Label(labelRect, label);
+            DrawSettingLabel(labelRect, label, disabled);
             Widgets.DrawBoxSolid(colorRect, value);
             Widgets.DrawBox(colorRect, 1);
 
@@ -91,8 +114,12 @@ namespace Spine.UI.SettingsFramework
             const float ReadoutWidth = 54f;
             const float SliderHeight = 18f;
 
-            Rect labelRect = rect.LeftPart(0.5f);
             Rect rightRect = rect.RightPart(0.48f);
+            Rect labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, rightRect.x - rect.x - 6f),
+                rect.height);
             Rect readoutRect = new Rect(
                 rightRect.xMax - ReadoutWidth,
                 rect.y,
@@ -104,7 +131,7 @@ namespace Spine.UI.SettingsFramework
                 Mathf.Max(24f, rightRect.width - ReadoutWidth - 6f),
                 SliderHeight);
 
-            Widgets.Label(labelRect, label);
+            DrawSettingLabel(labelRect, label, disabled);
 
             TextAnchor previousAnchor = Text.Anchor;
             Text.Anchor = TextAnchor.MiddleRight;
@@ -168,10 +195,14 @@ namespace Spine.UI.SettingsFramework
             Func<object, string> labelProvider = null,
             Func<object, string> descriptionProvider = null)
         {
-            var labelRect = rect.LeftPart(0.5f);
             var buttonRect = rect.RightPart(0.48f);
+            var labelRect = new Rect(
+                rect.x,
+                rect.y,
+                Mathf.Max(0f, buttonRect.x - rect.x - 6f),
+                rect.height);
 
-            Widgets.Label(labelRect, label);
+            DrawSettingLabel(labelRect, label, disabled);
 
             bool prevEnabled = GUI.enabled;
             if (disabled)
@@ -209,11 +240,8 @@ namespace Spine.UI.SettingsFramework
                     var option = new FloatMenuOption(optionLabel, () => onSelected?.Invoke(local));
                     options.Add(option);
                     optionDescriptions[option] = ResolveEnumDescription(
-                        enumType,
                         local,
-                        label,
                         tooltip,
-                        labelProvider,
                         descriptionProvider);
                     if (Convert.ToInt64(local) == currentNumericValue)
                     {
@@ -258,14 +286,11 @@ namespace Spine.UI.SettingsFramework
         }
 
         private static string ResolveEnumDescription(
-            Type enumType,
             object value,
-            string settingLabel,
             string settingDescription,
-            Func<object, string> labelProvider,
             Func<object, string> descriptionProvider)
         {
-            if (enumType == null || value == null)
+            if (value == null)
             {
                 return settingDescription ?? string.Empty;
             }
@@ -276,16 +301,7 @@ namespace Spine.UI.SettingsFramework
                 return suppliedDescription;
             }
 
-            string optionLabel = ResolveEnumLabel(
-                enumType,
-                value,
-                labelProvider);
-            string action = "Spine_Settings_UI_SelectsOption".Translate(
-                optionLabel,
-                settingLabel);
-            return string.IsNullOrEmpty(settingDescription)
-                ? action
-                : action + "\n\n" + settingDescription;
+            return settingDescription ?? string.Empty;
         }
 
         /// <summary>
@@ -326,18 +342,93 @@ namespace Spine.UI.SettingsFramework
         public static void DrawHeader(Rect rect, string label, Color? color = null)
         {
             var oldFont = Text.Font;
+            var oldAnchor = Text.Anchor;
             var oldColor = GUI.color;
 
             Text.Font = GameFont.Medium;
-            Color resolved = color ?? new Color(0.9f, 0.85f, 0.7f);
-            GUI.color = resolved;
-            Widgets.Label(rect, label);
-
-            // Underline for visual separation
-            Rect lineRect = new Rect(rect.x, rect.yMax - 4f, rect.width, 2f);
-            Widgets.DrawBoxSolid(lineRect, resolved);
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Color accent = ResolveSectionAccent(color);
+            GUI.color = accent;
+            Rect labelRect = new Rect(rect.x + 10f, rect.y, Mathf.Max(0f, rect.width - 10f), rect.height);
+            Widgets.Label(labelRect, label);
+            Widgets.DrawBoxSolid(new Rect(
+                labelRect.x,
+                rect.yMax - 4f,
+                labelRect.width,
+                2f), accent);
 
             Text.Font = oldFont;
+            Text.Anchor = oldAnchor;
+            GUI.color = oldColor;
+        }
+
+        internal static void DrawSubheader(Rect rect, string label, Color? color = null)
+        {
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            Color accent = ResolveSectionAccent(color);
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            GUI.color = Color.Lerp(SettingLabelColor, accent, 0.72f);
+            Rect labelRect = new Rect(rect.x + 8f, rect.y, Mathf.Max(0f, rect.width - 8f), rect.height);
+            Widgets.Label(labelRect, label);
+            Widgets.DrawBoxSolid(
+                new Rect(labelRect.x, rect.yMax - 3f, labelRect.width, 1f),
+                new Color(accent.r, accent.g, accent.b, 0.58f));
+
+            Text.Font = oldFont;
+            Text.Anchor = oldAnchor;
+            GUI.color = oldColor;
+        }
+
+        internal static Color ResolveSectionAccent(Color? color = null)
+        {
+            return color ?? DefaultSectionAccent;
+        }
+
+        internal static void DrawSectionPanel(Rect rect, float headerHeight, Color? color = null)
+        {
+            if (rect.width <= 0f || rect.height <= 0f)
+            {
+                return;
+            }
+
+            Color accent = ResolveSectionAccent(color);
+            Color panelColor = new Color(0.075f, 0.075f, 0.075f, 0.86f);
+            Color headerColor = Color.Lerp(
+                new Color(0.11f, 0.11f, 0.11f, 0.72f),
+                new Color(accent.r, accent.g, accent.b, 0.72f),
+                0.12f);
+            Color edgeColor = new Color(0.34f, 0.34f, 0.34f, 0.68f);
+            Color innerEdgeColor = new Color(accent.r, accent.g, accent.b, 0.34f);
+            Widgets.DrawBoxSolid(rect, panelColor);
+            Widgets.DrawBoxSolid(new Rect(
+                rect.x + 2f,
+                rect.y + 2f,
+                Mathf.Max(0f, rect.width - 4f),
+                Mathf.Min(Mathf.Max(0f, headerHeight - 1f), Mathf.Max(0f, rect.height - 4f))), headerColor);
+
+            Widgets.DrawBoxSolid(new Rect(rect.x, rect.y, rect.width, 1f), edgeColor);
+            Widgets.DrawBoxSolid(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), edgeColor);
+            Widgets.DrawBoxSolid(new Rect(rect.x, rect.y, 1f, rect.height), edgeColor);
+            Widgets.DrawBoxSolid(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), edgeColor);
+            Widgets.DrawBoxSolid(new Rect(rect.x + 1f, rect.y + headerHeight, Mathf.Max(0f, rect.width - 2f), 1f), innerEdgeColor);
+
+        }
+
+        private static void DrawSettingLabel(Rect rect, string label, bool disabled)
+        {
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            if (!disabled)
+            {
+                GUI.color = SettingLabelColor;
+            }
+
+            Widgets.Label(rect, label);
+            Text.Anchor = oldAnchor;
             GUI.color = oldColor;
         }
 

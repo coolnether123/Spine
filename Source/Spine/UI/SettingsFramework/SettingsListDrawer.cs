@@ -15,10 +15,17 @@ namespace Spine.UI.SettingsFramework
     {
         private const float ResetIconSlotWidth = 26f;
         private const float ResetButtonSize = 20f;
+        private const float ClearFilterIconSize = 16f;
+        private const float ClearFilterIconGap = 6f;
         private const float ToolbarGap = 8f;
         private const float FocusHighlightSeconds = 1.45f;
         private const float SearchResultDoubleClickMaxSeconds = 0.25f;
         private const float SearchResultDoubleClickMoveTolerance = 5f;
+
+        private static readonly Texture2D ResetIcon =
+            ContentFinder<Texture2D>.Get("UI/Buttons/Dev/Reload");
+        private static readonly Texture2D ClearIcon =
+            ContentFinder<Texture2D>.Get("UI/Widgets/CloseXSmall");
 
         private readonly SettingsHierarchy _hierarchy;
         private Vector2 _scrollPosition;
@@ -515,10 +522,48 @@ namespace Spine.UI.SettingsFramework
 
             Widgets.BeginScrollView(listRect, ref _scrollPosition, viewRect);
 
+            float panelY = 0f;
+            float panelStartY = 0f;
+            SettingDefinition panelSection = null;
+            for (int index = 0; index < _scrollingSettings.Count; index++)
+            {
+                SettingDefinition candidate = _scrollingSettings[index];
+                if (candidate.Type == SettingType.Header)
+                {
+                    if (panelSection != null)
+                    {
+                        SettingWidgets.DrawSectionPanel(
+                            new Rect(0f, panelStartY + 2f, viewRect.width, Mathf.Max(0f, panelY - panelStartY - 4f)),
+                            RowHeight - 4f,
+                            panelSection.HeaderColor);
+                    }
+
+                    panelSection = candidate;
+                    panelStartY = panelY;
+                }
+
+                panelY += MeasureRowHeight(candidate, settingsObject);
+            }
+
+            if (panelSection != null)
+            {
+                SettingWidgets.DrawSectionPanel(
+                    new Rect(0f, panelStartY + 2f, viewRect.width, Mathf.Max(0f, panelY - panelStartY - 4f)),
+                    RowHeight - 4f,
+                    panelSection.HeaderColor);
+            }
+
             float curY = 0f;
+            SettingDefinition activeSection = null;
+            int activeSectionDepth = 0;
             foreach (var def in _scrollingSettings)
             {
                 int depth = _hierarchy.GetDepth(def);
+                bool isSectionHeader = def.Type == SettingType.Header;
+                bool belongsToActiveSection = !isSectionHeader && activeSection != null;
+                int visualDepth = belongsToActiveSection
+                    ? Mathf.Max(depth, activeSectionDepth + 1)
+                    : depth;
                 bool disabledByAncestor = _hierarchy.IsDisabledByAncestor(def, settingsObject);
                 bool allowFocusedDisabledInteraction =
                     disabledByAncestor && IsFocusedForcedVisibleSetting(def);
@@ -530,14 +575,21 @@ namespace Spine.UI.SettingsFramework
                     TryHandleSearchResultDoubleClick(rowRect, def, settingsObject, viewMode, rect.height);
                 }
 
-                DrawFocusedSettingHighlight(rowRect, def);
+                DrawFocusedSettingHighlight(rowRect, def, visualDepth);
                 DrawSettingRow(
                     rowRect,
                     def,
                     settingsObject,
                     disabledByAncestor && !allowFocusedDisabledInteraction,
-                    depth,
+                    visualDepth,
+                    activeSection?.HeaderColor,
                     onSettingsChanged);
+                if (isSectionHeader)
+                {
+                    activeSection = def;
+                    activeSectionDepth = depth;
+                }
+
                 curY += rowHeight;
             }
 
@@ -666,13 +718,14 @@ namespace Spine.UI.SettingsFramework
                 bool allowFocusedDisabledInteraction =
                     disabledByAncestor && IsFocusedForcedVisibleSetting(def);
 
-                DrawFocusedSettingHighlight(rowRect, def);
+                DrawFocusedSettingHighlight(rowRect, def, _hierarchy.GetDepth(def));
                 DrawSettingRow(
                     rowRect,
                     def,
                     settingsObject,
                     disabledByAncestor && !allowFocusedDisabledInteraction,
                     _hierarchy.GetDepth(def),
+                    null,
                     onSettingsChanged);
                 curY += rowHeight;
             }
@@ -687,17 +740,17 @@ namespace Spine.UI.SettingsFramework
             object settingsObject,
             bool isDisabledByParent,
             int depth,
+            Color? sectionColor,
             Action onSettingsChanged)
         {
-            if (Mouse.IsOver(rect))
-            {
-                Widgets.DrawHighlight(rect);
-            }
-
             Rect controlRow = rect;
 
             float indent = depth * IndentPerLevel;
             Rect contentRect = new Rect(controlRow.x + indent, controlRow.y, controlRow.width - indent, controlRow.height);
+            if (Mouse.IsOver(rect))
+            {
+                Widgets.DrawHighlight(GetPanelRowRect(rect, def, depth));
+            }
 
             bool disabled = isDisabledByParent;
             string label = GetLabel?.Invoke(def) ?? def.Label ?? def.Id;
@@ -715,19 +768,34 @@ namespace Spine.UI.SettingsFramework
             }
 
             bool reserveResetSlot = ShowResetIcons && IsResettable(def, field);
+            Rect visibleResetRect = default(Rect);
+            bool hasVisibleReset = false;
             if (reserveResetSlot)
             {
-                Rect resetRect = new Rect(
-                    contentRect.x,
-                    contentRect.y + ((contentRect.height - ResetButtonSize) / 2f),
-                    ResetButtonSize,
-                    ResetButtonSize);
-
-                contentRect.x += ResetIconSlotWidth;
-                contentRect.width = Mathf.Max(0f, contentRect.width - ResetIconSlotWidth);
+                Rect resetRect;
+                if (depth > 0)
+                {
+                    resetRect = new Rect(
+                        contentRect.x - ResetButtonSize,
+                        contentRect.y + ((contentRect.height - ResetButtonSize) / 2f),
+                        ResetButtonSize,
+                        ResetButtonSize);
+                }
+                else
+                {
+                    resetRect = new Rect(
+                        contentRect.x,
+                        contentRect.y + ((contentRect.height - ResetButtonSize) / 2f),
+                        ResetButtonSize,
+                        ResetButtonSize);
+                    contentRect.x += ResetIconSlotWidth;
+                    contentRect.width = Mathf.Max(0f, contentRect.width - ResetIconSlotWidth);
+                }
 
                 if (HasNonDefaultValue(field, settingsObject, def))
                 {
+                    visibleResetRect = resetRect;
+                    hasVisibleReset = true;
                     DrawResetButton(resetRect, disabled, () =>
                     {
                         if (ResetSettingToDefault(field, settingsObject, def))
@@ -841,7 +909,7 @@ namespace Spine.UI.SettingsFramework
                         GUI.color = Color.gray;
                     }
 
-                    SettingWidgets.DrawHeader(contentRect, label);
+                    SettingWidgets.DrawHeader(contentRect, label, sectionColor ?? def.HeaderColor);
                     GUI.color = previousColor;
                     break;
                 case SettingType.Custom:
@@ -853,7 +921,9 @@ namespace Spine.UI.SettingsFramework
                     break;
             }
 
-            if (!string.IsNullOrEmpty(tooltip) && !DescribedFloatMenu.AnyOpen)
+            if (!string.IsNullOrEmpty(tooltip) &&
+                !DescribedFloatMenu.AnyOpen &&
+                (!hasVisibleReset || !Mouse.IsOver(visibleResetRect)))
             {
                 TooltipHandler.TipRegion(controlRow, tooltip);
                 if (Mouse.IsOver(controlRow))
@@ -1187,8 +1257,43 @@ namespace Spine.UI.SettingsFramework
 
         private void DrawClearFilterRow(Rect rect)
         {
-            Rect buttonRect = rect.ContractedBy(4f);
-            if (Widgets.ButtonText(buttonRect, "X Clear filter"))
+            const string label = "Clear filter";
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            Text.Font = GameFont.Small;
+            Vector2 labelSize = Text.CalcSize(label);
+            float width = ClearFilterIconSize + ClearFilterIconGap + labelSize.x;
+            Rect buttonRect = new Rect(
+                rect.center.x - (width / 2f),
+                rect.y + ((rect.height - Mathf.Max(ClearFilterIconSize, labelSize.y)) / 2f),
+                width,
+                Mathf.Max(ClearFilterIconSize, labelSize.y));
+            Rect iconRect = new Rect(
+                buttonRect.x,
+                buttonRect.center.y - (ClearFilterIconSize / 2f),
+                ClearFilterIconSize,
+                ClearFilterIconSize);
+            Rect labelRect = new Rect(
+                iconRect.xMax + ClearFilterIconGap,
+                buttonRect.y,
+                labelSize.x,
+                buttonRect.height);
+
+            Rect hitRect = new Rect(
+                buttonRect.x - 4f,
+                buttonRect.y - 4f,
+                buttonRect.width + 8f,
+                buttonRect.height + 8f);
+            Widgets.DrawHighlightIfMouseover(hitRect);
+            GUI.DrawTexture(iconRect, ClearIcon);
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(labelRect, label);
+            Text.Font = oldFont;
+            Text.Anchor = oldAnchor;
+            GUI.color = oldColor;
+
+            if (Widgets.ButtonInvisible(hitRect, true))
             {
                 ClearActiveFilter();
                 Event.current?.Use();
@@ -1395,7 +1500,7 @@ namespace Spine.UI.SettingsFramework
             }
         }
 
-        private void DrawFocusedSettingHighlight(Rect rowRect, SettingDefinition def)
+        private void DrawFocusedSettingHighlight(Rect rowRect, SettingDefinition def, int depth)
         {
             if (def == null ||
                 string.IsNullOrEmpty(_highlightedSettingId) ||
@@ -1419,10 +1524,24 @@ namespace Spine.UI.SettingsFramework
             Color focusColor = FocusHighlightColor;
             Color oldColor = GUI.color;
             GUI.color = new Color(focusColor.r, focusColor.g, focusColor.b, Mathf.Lerp(0.18f, 0.36f, pulse) * fade);
-            Widgets.DrawBoxSolid(rowRect, GUI.color);
+            Rect highlightRect = GetPanelRowRect(rowRect, def, depth);
+            Widgets.DrawBoxSolid(highlightRect, GUI.color);
             GUI.color = new Color(focusColor.r, focusColor.g, focusColor.b, 0.85f * fade);
-            Widgets.DrawBox(rowRect, 2);
+            Widgets.DrawBox(highlightRect, 2);
             GUI.color = oldColor;
+        }
+
+        private Rect GetPanelRowRect(Rect rowRect, SettingDefinition def, int depth)
+        {
+            int panelDepth = def.Type == SettingType.Header
+                ? depth
+                : Mathf.Max(0, depth - 1);
+            float inset = panelDepth * IndentPerLevel;
+            return new Rect(
+                rowRect.x + inset + 1f,
+                rowRect.y,
+                Mathf.Max(0f, rowRect.width - inset - 2f),
+                rowRect.height);
         }
 
         private void CenterOnSetting(
@@ -1548,7 +1667,7 @@ namespace Spine.UI.SettingsFramework
                 GUI.color = Color.gray;
             }
 
-            bool clicked = Widgets.ButtonText(rect, "R");
+            bool clicked = Widgets.ButtonImage(rect, ResetIcon);
 
             GUI.enabled = oldEnabled;
             GUI.color = oldColor;

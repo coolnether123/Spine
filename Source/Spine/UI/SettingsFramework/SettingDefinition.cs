@@ -112,6 +112,11 @@ namespace Spine.UI.SettingsFramework
         public int SortOrder = int.MinValue;
 
         /// <summary>
+        /// Optional accent used by a header and the rows grouped beneath it.
+        /// </summary>
+        public Color? HeaderColor;
+
+        /// <summary>
         /// Widget type used to render this setting.
         /// </summary>
         public SettingType Type;
