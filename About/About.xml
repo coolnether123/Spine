@@ -2,6 +2,7 @@
 <ModMetaData>
   <name>SpineLib</name>
   <author>CoolNether123</author>
+  <modVersion>1.1.0</modVersion>
   <packageId>CoolNether123.Spine</packageId>
   <supportedVersions>
     <li>0.13</li>
