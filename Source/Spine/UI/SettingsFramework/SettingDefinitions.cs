@@ -78,14 +78,22 @@ namespace Spine.UI.SettingsFramework
         /// </summary>
         public void Scribe(TSettings settings)
         {
+#if RWT_EMBEDDED_SPINE_SETTINGS
+            SettingsScribe.ScribeAll(settings, readOnlyDefinitions);
+#else
             Spine.Api.SpineApi.Settings.Scribe(settings, readOnlyDefinitions);
+#endif
         }
 
         /// <summary>Applies registered preference defaults.</summary>
         public IReadOnlyCollection<string> ApplyPreferenceDefaults(
             TSettings settings)
         {
+#if RWT_EMBEDDED_SPINE_SETTINGS
+            return SettingsScribe.ApplyPreferenceDefaults(
+#else
             return Spine.Api.SpineApi.Settings.ApplyPreferenceDefaults(
+#endif
                 settings,
                 readOnlyDefinitions);
         }
@@ -95,7 +103,11 @@ namespace Spine.UI.SettingsFramework
             TSettings settings,
             IEnumerable<string> changedFields = null)
         {
+#if RWT_EMBEDDED_SPINE_SETTINGS
+            SettingsScribe.NotifyPreferenceChanges(
+#else
             Spine.Api.SpineApi.Settings.NotifyPreferenceChanges(
+#endif
                 settings,
                 readOnlyDefinitions,
                 changedFields);
@@ -104,7 +116,11 @@ namespace Spine.UI.SettingsFramework
         /// <summary>Resolves a definition's persisted key.</summary>
         public string EffectiveScribeKey(SettingDefinition definition)
         {
+#if RWT_EMBEDDED_SPINE_SETTINGS
+            return SettingsScribe.EffectiveScribeKey(definition);
+#else
             return Spine.Api.SpineApi.Settings.EffectiveScribeKey(definition);
+#endif
         }
 
         public SettingsScope<TSettings> Section(
