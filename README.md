@@ -95,10 +95,10 @@ public sealed class ExampleMod : SpineMod<ExampleSettings>
 `SpineMod<TSettings>` owns standard RimWorld mod-settings plumbing and exposes
 the current settings object plus contextual-settings lease through inherited
 static accessors. Consumers still own their definitions, persistence fields,
-gameplay startup, and Harmony owner ID. `SettingDefinitions` supplies compact
-factories; omitted defaults come from a fresh settings instance and omitted
-sort orders follow definition order. The additive `SettingsSchema<TSettings>`
-API (Spine API 1.1.0, `SpineCapability.SettingsSchema`) owns ordered
+gameplay startup, and Harmony owner ID. `SettingsSchema<TSettings>` is the
+single settings-definition API; omitted defaults come from a fresh settings
+instance and omitted sort orders follow definition order. The schema
+(Spine API 1.1.0, `SpineCapability.SettingsSchema`) owns ordered
 definitions and scopes them under optional headers. Mods without a settings page use
 `SpineApi.Runtime` and the individual facades directly.
 
@@ -118,8 +118,9 @@ settings; three or fewer advanced-only settings are shown in one unified page.
 
 ### Setting types
 
-`SettingDefinitions` supplies `Header`, `Toggle`, `Enum`, `Colour`, `Slider`,
-`Button`, and `Custom`.
+`SettingsScope<TSettings>` supplies `Toggle`, `Int`, `Float`, `NumericInt`,
+`Slider`, `Enum`, `Colour`, `Button`, `Custom`, and the low-level `Define`
+escape hatch. `SettingsSchema<TSettings>.Section` supplies headers.
 
 For typed field-backed settings, the schema API removes repeated field-name and
 parent wiring while keeping the existing definition and scribing runtime:
@@ -149,31 +150,23 @@ and method calls are rejected so the runtime continues to use its established
 field-based preparation and scribing behavior. Passing no convention keeps
 `ScribeKey` null, preserving the existing `FieldName` fallback.
 
-Every factory takes the same leading arguments — id, field name, fallback
-label, then optional translation keys — so a reader never has to work out which
-factory they are looking at to know what the third argument means.
-
 Most settings need nothing more than that. A checkbox bound to a bool field:
 
 ```csharp
-SettingDefinitions.Toggle(
-    "visuals.legend",
-    nameof(ExampleSettings.ShowLegend),
-    "Show legend",
-    "Example_Settings_Legend",
-    tooltipKey: "Example_Settings_Legend_Tip",
-    scribeKey: "showLegend")
+schema.Root.Toggle(
+        "visuals.legend", settings => settings.ShowLegend, "Show legend")
+    .Localized("Example_Settings_Legend", "Example_Settings_Legend_Tip")
+    .ScribeAs("showLegend");
 ```
 
 And a button, which runs an action instead of storing a value:
 
 ```csharp
-SettingDefinitions.Button(
-    "colors.reset",
-    "Reset all",
-    settings => ((ExampleSettings)settings).ApplyDefaults(),
-    "Example_Settings_Reset",
-    tooltipKey: "Example_Settings_Reset_Tip")
+schema.Root.Button(
+        "colors.reset", "Reset all",
+        tooltip: "Restore color defaults",
+        onChanged: settings => settings.ApplyDefaults())
+    .Localized("Example_Settings_Reset", "Example_Settings_Reset_Tip");
 ```
 
 That is the whole API for the common case. The rest of this section is for the
@@ -186,13 +179,10 @@ its own name. A slider, for instance, needs bounds, and bounds passed as bare
 arguments would be two anonymous floats:
 
 ```csharp
-SettingDefinitions.Slider(
-        "visuals.opacity",
-        nameof(ExampleSettings.Opacity),
-        "Label opacity",
-        "Example_Settings_Opacity",
-        tooltipKey: "Example_Settings_Opacity_Tip",
-        scribeKey: "labelOpacity")
+schema.Root.Slider(
+        "visuals.opacity", settings => settings.Opacity, "Label opacity")
+    .Localized("Example_Settings_Opacity", "Example_Settings_Opacity_Tip")
+    .ScribeAs("labelOpacity")
     .Range(0.35f, 1f)
     .Step(0.05f)
     .ShowsPercent()

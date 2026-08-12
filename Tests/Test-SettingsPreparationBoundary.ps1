@@ -22,7 +22,7 @@ $facadeScribeBody = $facade.Substring(
 if ($facadeScribeBody -notmatch 'SettingsScribe\.ScribeAll\(') {
     throw 'ModSettingsFacade.Scribe() must delegate to SettingsScribe.ScribeAll().'
 }
-if ($facadeScribeBody -match 'SettingDefinitions\.Prepare\(') {
+if ($facadeScribeBody -match 'SettingsPreparation\.Prepare\(') {
     throw 'ModSettingsFacade.Scribe() must not prepare definitions before ScribeAll().'
 }
 
@@ -35,9 +35,15 @@ if (-not $scribeAll.Success) {
 }
 $prepareCalls = [regex]::Matches(
     $scribeAll.Groups['body'].Value,
-    'SettingDefinitions\.Prepare\(').Count
+    'SettingsPreparation\.Prepare\(').Count
 if ($prepareCalls -ne 1) {
     throw "SettingsScribe.ScribeAll() must prepare exactly once; found $prepareCalls calls."
+}
+
+$settingsSource = Get-Content -LiteralPath (
+    Join-Path $root 'Source\Spine\UI\SettingsFramework\SettingDefinitions.cs') -Raw
+if ($settingsSource -match 'public\s+static\s+class\s+SettingDefinitions') {
+    throw 'The removed public SettingDefinitions factory surface is still present.'
 }
 
 Write-Output 'PASS: settings scribing has one preparation owner.'

@@ -97,7 +97,7 @@ namespace Spine.UI.SettingsFramework
                 throw new ArgumentNullException(nameof(definitions));
             }
 
-            SettingDefinitions.Prepare(settingsObject, definitions);
+            SettingsPreparation.Prepare(settingsObject, definitions);
 
             var pageOptions = options ?? new ModSettingsPageOptions();
             if (float.IsNaN(pageOptions.RowHeight) ||

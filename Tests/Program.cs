@@ -27,7 +27,7 @@ namespace Spine.Tests
             Run("compact settings presentation thresholds", TestSettingsPresentationPolicy);
             Run("settings preparation is lazy and idempotent", TestSettingsPreparation);
             Run("typed settings schema builds compatible definitions", TestSettingsSchema);
-            Run("settings schema covers legacy definition metadata", TestSettingsSchemaLegacySurface);
+            Run("typed settings schema preserves definition metadata", TestSettingsSchemaMetadata);
             Run("contextual tooltips never add hints", TestContextualTooltipComposition);
 
             return Finish();
@@ -160,24 +160,22 @@ namespace Spine.Tests
         {
             var settings = new CountingSettings();
             CountingSettings.ConstructorCalls = 0;
-            var definitions = new List<SettingDefinition>
-            {
-                SettingDefinitions.Toggle(
-                    "enabled",
-                    nameof(CountingSettings.Enabled),
-                    "Enabled"),
-                SettingDefinitions.Header("header", "Header")
-            };
+            var schema = new SettingsSchema<CountingSettings>();
+            schema.Root.Toggle(
+                "enabled",
+                value => value.Enabled,
+                "Enabled");
+            schema.Root.Define("header", SettingType.Header, "Header");
 
-            SettingDefinitions.Prepare(settings, definitions);
+            SettingsPreparation.Prepare(settings, schema.Definitions);
             Equal(1, CountingSettings.ConstructorCalls,
                 "first unresolved default creates one pristine settings object");
-            Equal(true, definitions[0].DefaultValue,
+            Equal(true, schema.Definitions[0].DefaultValue,
                 "default is read from the pristine settings object");
-            Equal(0, definitions[0].SortOrder, "first sort order prepared");
-            Equal(1, definitions[1].SortOrder, "second sort order prepared");
+            Equal(0, schema.Definitions[0].SortOrder, "first sort order prepared");
+            Equal(1, schema.Definitions[1].SortOrder, "second sort order prepared");
 
-            SettingDefinitions.Prepare(settings, definitions);
+            SettingsPreparation.Prepare(settings, schema.Definitions);
             Equal(1, CountingSettings.ConstructorCalls,
                 "prepared definitions do not create another pristine object");
         }
@@ -185,7 +183,8 @@ namespace Spine.Tests
         private static void TestSettingsSchema()
         {
             var schema = new SettingsSchema<SchemaSettings>(
-                SettingsSchemaConventions.LowerCamelCase);
+                SettingsSchemaConventions.LowerCamelCase,
+                definition => definition.SearchKeywords = new[] { "schema" });
             SettingsScope<SchemaSettings> section = schema.Section(
                 "group",
                 "Group");
@@ -232,6 +231,8 @@ namespace Spine.Tests
                 "enum receives a convention key");
             Equal("color", colour.ScribeKey,
                 "colour receives a convention key");
+            Equal("schema", colour.SearchKeywords[0],
+                "schema decorator applies to every added definition");
             Equal("ColorLabel", colour.LabelKey,
                 "localized refinement sets the label key");
             Equal("ColorTooltip", colour.TooltipKey,
@@ -301,7 +302,7 @@ namespace Spine.Tests
                 "method selector rejected");
         }
 
-        private static void TestSettingsSchemaLegacySurface()
+        private static void TestSettingsSchemaMetadata()
         {
             Equal(6, (int)SettingType.Slider, "existing slider enum value retained");
             Equal(7, (int)SettingType.Int, "new integer enum value appended");
@@ -438,7 +439,7 @@ namespace Spine.Tests
             var hierarchy = new SettingsHierarchy(new[]
             {
                 header,
-                SettingDefinitions.Spacer("gap"),
+                schema.Root.Spacer("gap"),
                 integer
             });
             Equal(1, hierarchy.SettingCount,
