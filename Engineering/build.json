@@ -5,7 +5,7 @@
   "purpose": "Compile",
   "rimWorldVersion": "1.6",
   "project": "Source/Mod.csproj",
-  "configuration": "Release",
+  "configuration": "1.6",
   "assemblyName": "Spine",
   "packageId": "CoolNether123.Spine",
   "releaseIncludePaths": [
