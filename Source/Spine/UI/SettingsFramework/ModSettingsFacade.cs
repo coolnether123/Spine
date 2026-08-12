@@ -34,6 +34,17 @@ namespace Spine.UI.SettingsFramework
         void Scribe(
             object settingsObject,
             IReadOnlyList<SettingDefinition> definitions);
+
+        IReadOnlyCollection<string> ApplyPreferenceDefaults(
+            object settingsObject,
+            IReadOnlyList<SettingDefinition> definitions);
+
+        void NotifyPreferenceChanges(
+            object settingsObject,
+            IReadOnlyList<SettingDefinition> definitions,
+            IEnumerable<string> changedFields = null);
+
+        string EffectiveScribeKey(SettingDefinition definition);
     }
 
     internal sealed class ModSettingsFacade : IModSettingsFacade
@@ -151,6 +162,31 @@ namespace Spine.UI.SettingsFramework
             }
 
             SettingsScribe.ScribeAll(settingsObject, definitions);
+        }
+
+        public IReadOnlyCollection<string> ApplyPreferenceDefaults(
+            object settingsObject,
+            IReadOnlyList<SettingDefinition> definitions)
+        {
+            return SettingsScribe.ApplyPreferenceDefaults(
+                settingsObject,
+                definitions);
+        }
+
+        public void NotifyPreferenceChanges(
+            object settingsObject,
+            IReadOnlyList<SettingDefinition> definitions,
+            IEnumerable<string> changedFields = null)
+        {
+            SettingsScribe.NotifyPreferenceChanges(
+                settingsObject,
+                definitions,
+                changedFields);
+        }
+
+        public string EffectiveScribeKey(SettingDefinition definition)
+        {
+            return SettingsScribe.EffectiveScribeKey(definition);
         }
 
         private static string Translate(string key, string fallback)

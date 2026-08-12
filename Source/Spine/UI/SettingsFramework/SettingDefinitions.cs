@@ -81,6 +81,32 @@ namespace Spine.UI.SettingsFramework
             Spine.Api.SpineApi.Settings.Scribe(settings, readOnlyDefinitions);
         }
 
+        /// <summary>Applies registered preference defaults.</summary>
+        public IReadOnlyCollection<string> ApplyPreferenceDefaults(
+            TSettings settings)
+        {
+            return Spine.Api.SpineApi.Settings.ApplyPreferenceDefaults(
+                settings,
+                readOnlyDefinitions);
+        }
+
+        /// <summary>Runs registered reactions after a bulk preference update.</summary>
+        public void NotifyPreferenceChanges(
+            TSettings settings,
+            IEnumerable<string> changedFields = null)
+        {
+            Spine.Api.SpineApi.Settings.NotifyPreferenceChanges(
+                settings,
+                readOnlyDefinitions,
+                changedFields);
+        }
+
+        /// <summary>Resolves a definition's persisted key.</summary>
+        public string EffectiveScribeKey(SettingDefinition definition)
+        {
+            return Spine.Api.SpineApi.Settings.EffectiveScribeKey(definition);
+        }
+
         public SettingsScope<TSettings> Section(
             string id,
             string label,
