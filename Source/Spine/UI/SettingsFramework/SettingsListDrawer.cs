@@ -909,7 +909,7 @@ namespace Spine.UI.SettingsFramework
                 contentRect.width = Mathf.Max(0f, contentRect.width - SupersessionAffordanceSlotWidth);
             }
 
-            if (!disabled && isHovered)
+            if (!disabled && isHovered && def.Type != SettingType.ReadOnly)
             {
                 NotifySettingPreview(def, settingsObject, field);
             }
