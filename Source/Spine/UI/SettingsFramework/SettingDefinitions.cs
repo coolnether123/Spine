@@ -64,12 +64,6 @@ namespace Spine.UI.SettingsFramework
         {
         }
 
-        /// <summary>
-        /// Creates a schema with an optional callback invoked after each
-        /// definition is normalized and appended. The callback is useful for
-        /// one cross-cutting consumer policy, such as adding a shared
-        /// invalidation callback, without wrapping every declaration.
-        /// </summary>
         public SettingsSchema(
             Func<string, string> scribeKeyConvention,
             Action<SettingDefinition> onAdd)
