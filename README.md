@@ -150,6 +150,12 @@ and method calls are rejected so the runtime continues to use its established
 field-based preparation and scribing behavior. Passing no convention keeps
 `ScribeKey` null, preserving the existing `FieldName` fallback.
 
+`SettingDefinitions` is a legacy compatibility facade, not the current API.
+It remains in the shipped Spine assembly so mods compiled against the older
+factory methods continue to run when SpineLib is updated before the mod is
+recompiled. Calls to it produce an `[Obsolete]` compiler warning; new code
+should use `SettingsSchema<TSettings>` and `SettingsScope<TSettings>`.
+
 Most settings need nothing more than that. A checkbox bound to a bool field:
 
 ```csharp

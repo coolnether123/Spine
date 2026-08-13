@@ -17,6 +17,8 @@ namespace Spine.TranspilerFixtures
             AccessTools.Method(typeof(Program), nameof(Replacement));
         private static readonly MethodInfo GuardedTargetMethod =
             AccessTools.Method(typeof(Program), nameof(GuardedTarget));
+        private static readonly MethodInfo TypedGuardedTargetMethod =
+            AccessTools.Method(typeof(Program), nameof(TypedGuardedTarget));
         private static readonly MethodInfo ShouldSkipMethod =
             AccessTools.Method(typeof(Program), nameof(ShouldSkip));
         private static readonly MethodInfo WrapMethod =
@@ -69,6 +71,49 @@ namespace Spine.TranspilerFixtures
                             "guard skips only enabled call");
                     });
                 RunPatch(
+                    "typed call guard",
+                    typeof(GuardHost),
+                    nameof(GuardHost.InvokeGuardedTarget),
+                    nameof(TypedGuardTranspiler),
+                    () =>
+                    {
+                        var ordinary = new GuardHost();
+                        var guarded = new GuardedHost();
+
+                        guardedTargetCalls = 0;
+                        skipGuardedTarget = false;
+                        ordinary.InvokeGuardedTarget();
+                        guarded.InvokeGuardedTarget();
+
+                        skipGuardedTarget = true;
+                        ordinary.InvokeGuardedTarget();
+                        guarded.InvokeGuardedTarget();
+
+                        AssertEqual(
+                            3,
+                            guardedTargetCalls,
+                            "typed guard skips only matching instance when enabled");
+                    });
+                RunPatch(
+                    "ambiguous call fallback",
+                    nameof(AmbiguousTarget),
+                    nameof(AmbiguousTranspiler),
+                    () =>
+                    {
+                        AssertEqual(2, AmbiguousTarget(), "ambiguous calls remain original");
+                    });
+                RunPatch(
+                    "ambiguous guard fallback",
+                    nameof(AmbiguousGuardTarget),
+                    nameof(AmbiguousGuardTranspiler),
+                    () =>
+                    {
+                        guardedTargetCalls = 0;
+                        skipGuardedTarget = true;
+                        AmbiguousGuardTarget();
+                        AssertEqual(2, guardedTargetCalls, "ambiguous guard leaves both calls original");
+                    });
+                RunPatch(
                     "return wrapper and guard",
                     nameof(ReturnTarget),
                     nameof(ReturnTranspiler),
@@ -98,9 +143,19 @@ namespace Spine.TranspilerFixtures
             string transpilerName,
             Action assertion)
         {
+            RunPatch(name, typeof(Program), targetName, transpilerName, assertion);
+        }
+
+        private static void RunPatch(
+            string name,
+            Type targetType,
+            string targetName,
+            string transpilerName,
+            Action assertion)
+        {
             var harmony = new HarmonyLib.Harmony(
                 "CoolNether123.Spine.TranspilerFixtures." + name);
-            var target = AccessTools.Method(typeof(Program), targetName);
+            var target = AccessTools.Method(targetType, targetName);
             var transpiler = new HarmonyMethod(
                 AccessTools.Method(typeof(Program), transpilerName));
             harmony.Patch(target, transpiler: transpiler);
@@ -165,6 +220,62 @@ namespace Spine.TranspilerFixtures
                 });
         }
 
+        private static IEnumerable<CodeInstruction> AmbiguousTranspiler(
+            IEnumerable<CodeInstruction> instructions,
+            MethodBase original,
+            ILGenerator generator)
+        {
+            return FluentTranspilerExecution.ExecuteRequiredOrOriginal(
+                instructions,
+                original,
+                generator,
+                "Ambiguous call fixture",
+                transpiler => transpiler
+                    .ForCall(SourceMethod)
+                    .ReplaceWith(ReplacementMethod));
+        }
+
+        private static IEnumerable<CodeInstruction> AmbiguousGuardTranspiler(
+            IEnumerable<CodeInstruction> instructions,
+            MethodBase original,
+            ILGenerator generator)
+        {
+            return FluentTranspilerExecution.ExecuteRequiredOrOriginal(
+                instructions,
+                original,
+                generator,
+                "Ambiguous guard fixture",
+                transpiler => transpiler
+                    .BeforeCall(GuardedTargetMethod)
+                    .SkipOriginalWhen(guard => guard.RequireCallTrue(ShouldSkipMethod)));
+        }
+
+        private static IEnumerable<CodeInstruction> TypedGuardTranspiler(
+            IEnumerable<CodeInstruction> instructions,
+            MethodBase original,
+            ILGenerator generator)
+        {
+            return FluentTranspiler.Execute(
+                instructions,
+                original,
+                generator,
+                transpiler =>
+                {
+                    var result = transpiler
+                        .BeforeCall(TypedGuardedTargetMethod)
+                        .IncludingPreviousInstruction()
+                        .SkipOriginalWhen(
+                            guard => guard
+                                .RequireCallTrue(ShouldSkipMethod)
+                                .SkipIfThisIs(typeof(GuardedHost)));
+                    if (result != FluentReplacementResult.PatternReplaced)
+                    {
+                        throw new InvalidOperationException(
+                            "Typed call guard failed: " + result + ".");
+                    }
+                });
+        }
+
         private static IEnumerable<CodeInstruction> ReturnTranspiler(
             IEnumerable<CodeInstruction> instructions,
             MethodBase original,
@@ -224,6 +335,19 @@ namespace Spine.TranspilerFixtures
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int AmbiguousTarget()
+        {
+            return Source() + Source();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void AmbiguousGuardTarget()
+        {
+            GuardedTarget();
+            GuardedTarget();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static int Source() => 1;
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -235,6 +359,11 @@ namespace Spine.TranspilerFixtures
             guardedTargetCalls++;
         }
 
+        private static void TypedGuardedTarget(int value)
+        {
+            guardedTargetCalls += value == 7 ? 1 : 1000;
+        }
+
         private static bool ShouldSkip() => skipGuardedTarget;
 
         private static int Wrap(int value) => value + 10;
@@ -242,6 +371,19 @@ namespace Spine.TranspilerFixtures
         private static void OnReturn()
         {
             returnGuardCalls++;
+        }
+
+        private class GuardHost
+        {
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            public void InvokeGuardedTarget()
+            {
+                TypedGuardedTarget(7);
+            }
+        }
+
+        private sealed class GuardedHost : GuardHost
+        {
         }
 
         private static void AssertEqual<T>(
