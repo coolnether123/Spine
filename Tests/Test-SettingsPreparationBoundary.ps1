@@ -42,8 +42,11 @@ if ($prepareCalls -ne 1) {
 
 $settingsSource = Get-Content -LiteralPath (
     Join-Path $root 'Source\Spine\UI\SettingsFramework\SettingDefinitions.cs') -Raw
-if ($settingsSource -match 'public\s+static\s+class\s+SettingDefinitions') {
-    throw 'The removed public SettingDefinitions factory surface is still present.'
+if ($settingsSource -notmatch 'public\s+static\s+class\s+SettingDefinitions') {
+    throw 'The legacy public SettingDefinitions compatibility facade is missing.'
+}
+if ($settingsSource -notmatch '\[Obsolete\("Use SettingsSchema<TSettings> and SettingsScope<TSettings>\.", false\)\]') {
+    throw 'The legacy SettingDefinitions compatibility facade must direct new consumers to the typed schema.'
 }
 
 Write-Output 'PASS: settings scribing has one preparation owner.'

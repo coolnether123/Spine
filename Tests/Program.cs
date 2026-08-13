@@ -26,6 +26,7 @@ namespace Spine.Tests
             Run("contextual scroll and highlight presentation", TestContextualPresentation);
             Run("compact settings presentation thresholds", TestSettingsPresentationPolicy);
             Run("settings preparation is lazy and idempotent", TestSettingsPreparation);
+            Run("legacy settings factories retain the 1.0 contract", TestLegacySettingDefinitions);
             Run("typed settings schema builds compatible definitions", TestSettingsSchema);
             Run("typed settings schema preserves definition metadata", TestSettingsSchemaMetadata);
             Run("contextual tooltips never add hints", TestContextualTooltipComposition);
@@ -182,6 +183,54 @@ namespace Spine.Tests
             Equal(1, CountingSettings.ConstructorCalls,
                 "prepared definitions do not create another pristine object");
         }
+
+#pragma warning disable CS0618
+        private static void TestLegacySettingDefinitions()
+        {
+            Require(
+                Attribute.IsDefined(typeof(SettingDefinitions), typeof(ObsoleteAttribute)),
+                "legacy settings facade is marked obsolete");
+
+            SettingDefinition toggle = SettingDefinitions.Toggle(
+                "enabled",
+                "Enabled",
+                "Enabled",
+                labelKey: "Enabled_Label",
+                tooltip: "Enabled tooltip",
+                tooltipKey: "Enabled_Tooltip",
+                parentId: "general",
+                simple: false,
+                controlsChildren: true,
+                scribeKey: "legacyEnabled");
+            Equal(SettingType.Bool, toggle.Type, "legacy toggle type");
+            Equal("Enabled", toggle.FieldName, "legacy toggle field");
+            Equal("general", toggle.ParentId, "legacy toggle parent");
+            Equal("legacyEnabled", toggle.ScribeKey, "legacy toggle scribe key");
+            Require(!toggle.ShowInSimpleView, "legacy toggle simple-view flag");
+            Require(toggle.ControlsChildVisibility, "legacy toggle child control");
+
+            SettingDefinition slider = SettingDefinitions.Slider(
+                "size", "Size", "Size", scribeKey: "legacySize");
+            Equal(SettingType.Slider, slider.Type, "legacy slider type");
+            Equal("legacySize", slider.ScribeKey, "legacy slider scribe key");
+
+            SettingDefinition enumDefinition = SettingDefinitions.Enum(
+                "mode", "Mode", typeof(SchemaMode), "Mode");
+            Equal(typeof(SchemaMode), enumDefinition.EnumType, "legacy enum type");
+
+            SettingDefinition colour = SettingDefinitions.Colour(
+                "color", "Color", "Color", tooltipKey: "Color_Tooltip");
+            Equal(SettingType.Color, colour.Type, "legacy colour type");
+            Equal("Color_Tooltip", colour.TooltipKey, "legacy colour tooltip key");
+
+            SettingDefinition header = SettingDefinitions.Header("general", "General");
+            Equal(SettingType.Header, header.Type, "legacy header type");
+            SettingDefinition button = SettingDefinitions.Button("reset", "Reset", _ => { });
+            Equal(SettingType.Button, button.Type, "legacy button type");
+            SettingDefinition custom = SettingDefinitions.Custom("custom", null);
+            Equal(SettingType.Custom, custom.Type, "legacy custom type");
+        }
+#pragma warning restore CS0618
 
         private static void TestSettingsSchema()
         {
