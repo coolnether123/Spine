@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == '0.16' Or '$(Configuration)' == '0.15' Or '$(Configuration)' == '0.14' Or '$(Configuration)' == '0.13' Or '$(Configuration)' == 'Alpha4'">
     <Compile Remove="**\*.cs" />
+    <Compile Include="Compatibility\LegacyReadOnlyCollections.cs" />
     <Compile Include="Legacy\SpineLegacyApi.cs" />
     <Compile Include="Legacy\SpineLegacyBootstrap.cs" />
     <Compile Include="Spine\Core\Caching\BoundedLruCache.cs" />
