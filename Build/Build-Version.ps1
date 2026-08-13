@@ -15,8 +15,8 @@ if ([string]::IsNullOrWhiteSpace($toolingRoot) -or
     throw 'Spine build must run through the Cascade executor.'
 }
 
-Import-Module (Join-Path $toolingRoot 'modules\RimWorld.Tooling.Depot\RimWorld.Tooling.Depot.psd1') -Force
 Import-Module (Join-Path $toolingRoot 'modules\RimWorld.Tooling.Build\RimWorld.Tooling.Build.psd1') -Force
+Import-Module (Join-Path $toolingRoot 'modules\RimWorld.Tooling.Depot\RimWorld.Tooling.Depot.psd1') -Force
 
 $environment = Resolve-RwtEnvironment `
     -Version $Configuration `
