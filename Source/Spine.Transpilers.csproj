@@ -16,6 +16,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Compatibility\LegacyReadOnlyCollections.cs" />
     <Compile Include="Spine\harmony\HarmonyCompat.cs" />
     <Compile Include="Spine\harmony\HarmonyLog.cs" />
     <Compile Include="Spine\harmony\Transpilers\**\*.cs" />
