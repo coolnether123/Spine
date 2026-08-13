@@ -19,6 +19,7 @@ namespace Spine.Tests
             Run("semantic version and capability comparison", TestVersionCapabilities);
             Run("patch operation identities", TestPatchOperationIdentities);
             Run("contextual Alt-left detection and rejection", TestContextualInput);
+            Run("contextual hit rectangles use max-exclusive bounds", TestContextualHitRectBounds);
             Run("contextual overlap priority and duplicate binding", TestContextualOverlap);
             Run("contextual multiple consumers release and cleanup", TestContextualLifecycle);
             Run("contextual deferred opening and exception isolation", TestContextualDeferredActions);
@@ -614,6 +615,27 @@ namespace Spine.Tests
                 "right-click rejected");
             Require(!Routes(router, ContextualPointerEventType.MouseMove, 0, true),
                 "Alt-hover rejected");
+        }
+
+        private static void TestContextualHitRectBounds()
+        {
+            var left = new ContextualHitRect(2f, 3f, 8f, 7f);
+            var right = new ContextualHitRect(10f, 3f, 4f, 7f);
+
+            Require(left.Contains(2f, 3f),
+                "minimum corner accepted");
+            Require(left.Contains(6f, 6f),
+                "interior point accepted");
+            Require(left.Contains(9.999f, 9.999f),
+                "point immediately inside maximum edges accepted");
+            Require(!left.Contains(10f, 6f),
+                "maximum X edge rejected");
+            Require(!left.Contains(6f, 10f),
+                "maximum Y edge rejected");
+            Require(!left.Contains(10f, 10f),
+                "maximum corner rejected");
+            Require(!left.Contains(10f, 6f) && right.Contains(10f, 6f),
+                "adjacent rectangles do not both claim their shared boundary");
         }
 
         private static void TestContextualOverlap()
