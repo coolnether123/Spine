@@ -124,7 +124,7 @@ namespace Spine.Tests
                 runtime.Descriptor.ApiId,
                 "runtime facade API id");
             Equal(
-                new SemanticVersion(1, 1, 1),
+                new SemanticVersion(1, 1, 0),
                 runtime.Descriptor.Version,
                 "settings-page capability runtime version");
             var descriptorField = typeof(SpineRuntimeFacade).GetField(
