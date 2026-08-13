@@ -8,6 +8,8 @@
     <RwtTestSupportProject Condition="'$(RwtTestSupportProject)' == ''">$(MSBuildThisFileDirectory)..\..\..\Worktrees\RimWorld-Tooling\phase-a\test-support\RimWorld.ModTestSupport\RimWorld.ModTestSupport.csproj</RwtTestSupportProject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Source\Compatibility\LegacyReadOnlyCollections.cs"
+             Link="Compatibility\LegacyReadOnlyCollections.cs" />
     <Compile Remove="TranspilerFixtures\**\*.cs" />
     <Compile Include="..\Source\Spine\Core\Caching\BoundedLruCache.cs"
              Link="Foundation\BoundedLruCache.cs" />

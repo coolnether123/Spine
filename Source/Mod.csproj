@@ -19,12 +19,23 @@
   <PropertyGroup Condition="'$(Configuration)' == '1.3'">
     <DefineConstants>TRACE;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_CLICK_OUTSIDE;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_FLOATMENU_DOGUI_CONTEXT</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == '1.2' Or '$(Configuration)' == '1.1' Or '$(Configuration)' == '1.0'">
+  <PropertyGroup Condition="'$(Configuration)' == '1.2' Or '$(Configuration)' == '1.1'">
     <DefineConstants>TRACE;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_FLOATMENU_DOGUI_CONTEXT</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == '1.0'">
+    <DefineConstants>TRACE;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_FLOATMENU_DOGUI_CONTEXT;RWT_LEGACY_BCL</DefineConstants>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <NoStdLib>true</NoStdLib>
+    <FrameworkPathOverride>$(RimWorldManagedDir)</FrameworkPathOverride>
     <RwtUseUnityImGui Condition="'$(Configuration)' == '1.0'">false</RwtUseUnityImGui>
     <RwtUseUnityInputLegacy Condition="'$(Configuration)' == '1.0'">false</RwtUseUnityInputLegacy>
     <RwtUseLegacyUnityAssembly Condition="'$(Configuration)' == '1.0'">true</RwtUseLegacyUnityAssembly>
   </PropertyGroup>
+  <ItemGroup Condition="'$(Configuration)' == '1.0'">
+    <Reference Include="mscorlib" HintPath="$(RimWorldManagedDir)\mscorlib.dll" Private="false" />
+    <Reference Include="System" HintPath="$(RimWorldManagedDir)\System.dll" Private="false" />
+    <Reference Include="System.Core" HintPath="$(RimWorldManagedDir)\System.Core.dll" Private="false" />
+  </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)' == '0.19'">
     <DefineConstants>TRACE;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_FLOATMENU_DOGUI_CONTEXT</DefineConstants>
     <RwtUseUnityImGui>false</RwtUseUnityImGui>
