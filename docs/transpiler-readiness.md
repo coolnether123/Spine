@@ -1,138 +1,33 @@
-# Fluent transpiler: shipping and advertising readiness
+# Legacy Fluent transpiler removal
 
-Status: reviewed 2026-08-05 against the Spine 1.0 tree.
-Question asked: is cooperative transpiling — two independent mods applying a
-Spine transpiler to the same target method — safe to advertise publicly?
+Status: removed from Spine and the migrated Better Work Tab branch on
+2026-08-15.
 
-**Answer: ship it, do not advertise it.** The decision is to include the
-transpiler in the Spine package while making no store-page claim about it.
-Section 2 is why the claim is withheld; section 1 is what must change for the
-shipping half of that decision to actually happen.
+The former `Spine.Transpilers` companion was not an active gameplay contract.
+The authorized BWT branch has six production transpiler entry points, all of
+which now call the BWT-owned exact-profile engine under
+`Source/Transpilers/BwtExactProfile`. The Spine production tree has no
+remaining consumer of the legacy API. The only other workspace references were
+tests, developer fixtures, documentation, historical payloads, or copied local
+implementations such as Construction Performance Optimizer's local transpiler
+code.
 
-## 1. Packaging — implemented
+The removal boundary includes:
 
-The transpiler now ships inside the Spine package. Three changes made this
-true, and they are the things to re-check if the packaging is ever revisited:
+- the 20 legacy companion source files and the standalone
+  `Source/Spine.Transpilers.csproj`;
+- the emitted-IL fixture project and legacy bootstrap;
+- tracked `Spine.Transpilers.dll` payloads;
+- legacy mirror, build, capability, API-contract, and test-project references.
 
-- `Source/Spine.Transpilers.csproj` now emits to `..\1.6\Assemblies\` instead of
-  `..\Developer\Spine.Transpilers\1.6\Assemblies\`, so the assembly is built
-  into Spine's own shipping folder.
-- `Engineering/build.json` lists `1.6/Assemblies/Spine.Transpilers.dll` in
-  `releaseIncludePaths`. That allowlist is explicit, so an unlisted file is
-  excluded; this entry is what actually causes the assembly to ship.
-- `README.md` no longer describes the transpiler as a separate developer mod
-  that must never be included in the Workshop upload. That policy was reversed,
-  and leaving the text in place would have documented a rule the release
-  violates.
+`SpineCapability` bit 10 remains reserved with its established numeric value so
+already-built negotiators do not observe a renumbered protocol. Spine no longer
+advertises that bit, and BWT rejects both embedded and external legacy
+`Spine.Harmony.FluentTranspiler` types. The generalized framework at
+`A:\Dev\Projects\FluentTranspiler` remains independent and is not a BWT or
+Spine dependency.
 
-Two consequences accepted deliberately:
-
-- RimWorld loads every assembly in a mod's `Assemblies` folder, so every Spine
-  subscriber now loads roughly 170 KB of transpiler code that does nothing
-  unless a consumer calls into it.
-- `Spine.Transpilers.dll` carries its own copies of `HarmonyCompat` and
-  `HarmonyLog`. Those type names therefore exist in two assemblies loaded
-  together. This is legal and was already the case for anyone running both mods,
-  but it is now universal rather than opt-in.
-- `Developer/Spine.Transpilers/` is no longer tracked. It held a stale copy of
-  the assembly from when the transpiler was a separate developer mod, was
-  excluded from the release allowlist either way, and would only have misled a
-  reader of the public repository into thinking it was still the build target.
-
-Shipping and advertising are separate choices. The package includes the
-subsystem; the store page, `About.xml`, and the repository README say nothing
-about it. The reasons for withholding the public claim are below.
-
-## 2. Cooperative transpiling specifically is unproven
-
-The subsystem is more mature than a first pass suggests. The following are
-verified, not assumed:
-
-- Roughly thirty **public** recipe methods return `FluentReplacementResult`, so
-  the documented consumer contract ("inspect the result when the edit is
-  required") is genuinely implementable. Verified across
-  `FluentTranspilerCallRecipes.cs`, `FluentTranspilerFieldRecipes.cs`,
-  `FluentTranspilerReturnRecipes.cs`, `FluentTranspilerGuardRecipes.cs`,
-  `FluentTranspilerRangeCheckRecipes.cs`, `FluentTranspilerClampRecipes.cs`.
-- Six of the eight result values are actually produced: `NoMatch` (26 sites),
-  `PatternReplaced` (20), `UnsafeMatch` (17), `Failed` (16),
-  `ReplacementAlreadyPresent` (4), `AmbiguousMatch` (4),
-  `FallbackCallReplaced` (3). The README's claim that a singular recipe rejects
-  an ambiguous match rather than patching an arbitrary occurrence is backed by
-  real `AmbiguousMatch` production.
-- `StackSentinel` is a real basic-block dataflow analyser with genuine stack
-  underflow and branch-merge height-mismatch detection, and it degrades to a
-  depth-preserving unknown type rather than false-positiving when it encounters
-  locals or types introduced by another mod.
-- IL-level fixtures exist and exercise emitted code, not just compilation:
-  `Tests/TranspilerFixtures/Program.cs` applies real Harmony patches to four
-  targets — branch labels, exception blocks, a call guard, and return
-  wrap/guard — asserts runtime behaviour, and unpatches afterwards.
-
-Three verified gaps are what make the cooperative case unproven:
-
-1. **`AlreadyPatched` is inert.** The value is declared in
-   `FluentReplacementResult.cs:9` and is treated as success by
-   `Succeeded()` at `FluentReplacementResult.cs:22`. It is produced at **zero**
-   sites anywhere in the tree. This is precisely the value that would report
-   "another mod already rewrote this site," so the one API signal a consumer
-   would use to detect a cross-mod conflict never fires. A consumer that
-   correctly checks `Succeeded()` cannot distinguish cooperative success from a
-   condition that is never raised.
-
-2. **Stack validation is skipped entirely on methods with exception-handling
-   clauses.** `FluentTranspiler.cs:2297` sets
-   `skipStackValidationForExceptionHandlers` and the validation block is guarded
-   by `if (!skipStackValidationForExceptionHandlers)`. Any target with
-   `try`/`catch`/`finally` — a large share of interesting RimWorld methods — is
-   never stack-checked.
-
-3. ~~A critical validation failure does not abort the patch.~~ **Withdrawn —
-   this was wrong.** `HarmonyCompat.cs` hardcodes
-   `ModPrefs.TranspilerFailFastCritical => true`, so the throw at
-   `FluentTranspiler.cs:2389` does fire on a critical finding and IL that failed
-   validation is never handed to Harmony. The same file also hardcodes
-   `TranspilerSafeMode` and `TranspilerForcePreserveInstructionCount` to true,
-   so replacements preserve instruction count by default and branch targets
-   pointing into a replaced span stay valid. The defaults are materially safer
-   than an earlier pass concluded; that pass had not read `HarmonyCompat.cs`.
-
-   The residual cost is that the abort is a throw out of `Execute`, which has no
-   try/catch, so it propagates into Harmony and fails the consumer's whole patch
-   class rather than just the one edit. That is loud and safe, but coarse.
-
-There is also no automated test covering two independent transpilers applied to
-one target method. Each fixture patches a distinct target and unpatches before
-the next.
-
-### Failure a player would see
-
-Most likely: silent feature loss. Mod A rewrites the call site, mod B's pattern
-no longer matches, mod B's edits no-op, and the build returns an unmodified
-stream. Mod A works, mod B's feature is simply missing, and the player reports
-the bug against the wrong mod.
-
-Less likely but worse: if both patterns match against shifted IL and the target
-contains an exception handler, the result is never stack-checked and ships. A
-resulting `InvalidProgramException` surfaces at first invocation, far from the
-patch site.
-
-## What would make it advertisable
-
-Produce `AlreadyPatched` where a cross-mod conflict is detectable; stop skipping
-stack validation on exception-handler methods; and land a fixture that applies
-two independent transpilers to one target and asserts the second one's
-behaviour.
-
-None of that blocks the Spine 1.0 release. The subsystem ships, but no public
-claim is made about cooperative transpiling, and a single-mod consumer is not
-affected by any of the three gaps. They are the prerequisites for making that
-claim later, not for shipping now.
-
-## Correction to an earlier review
-
-An earlier automated pass concluded that consumers could not obtain a
-`FluentReplacementResult`, that most result values were dead, and that the
-repository contained no tests. All three conclusions were artifacts of an
-incomplete file set — the recipe files and the `Tests/` tree were not examined.
-They are recorded here as refuted so they are not repeated.
+This document replaces the former modder API guide. New transpiler work belongs
+to the owning consumer and must retain its own emitted-IL, compatibility, and
+runtime evidence; removal of the legacy companion is not a claim that any new
+generalized transpiler framework is production-ready.

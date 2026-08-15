@@ -42,12 +42,11 @@ function Invoke-SpineProjectBuild
 }
 
 Invoke-SpineProjectBuild (Join-Path $repoRoot 'Source\Mod.csproj')
-Invoke-SpineProjectBuild (Join-Path $repoRoot 'Source\Spine.Transpilers.csproj')
 
 $buildRoot = Join-Path $outputRoot 'build'
 $payloadRoot = Join-Path $repoRoot "$Configuration\Assemblies"
 New-Item -ItemType Directory -Path $payloadRoot -Force | Out-Null
-foreach ($assemblyName in @('Spine.dll', 'Spine.Transpilers.dll'))
+foreach ($assemblyName in @('Spine.dll'))
 {
     $artifact = Join-Path $buildRoot $assemblyName
     if (-not (Test-Path -LiteralPath $artifact -PathType Leaf))

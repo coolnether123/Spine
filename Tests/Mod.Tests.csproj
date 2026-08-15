@@ -10,6 +10,9 @@
   <ItemGroup>
     <Compile Include="..\Source\Compatibility\LegacyReadOnlyCollections.cs"
              Link="Compatibility\LegacyReadOnlyCollections.cs" />
+    <!-- Keep stale/generated files under the retired fixture directory out of
+         the SDK default compile glob. The fixture project and source are gone,
+         but old obj output can remain in a dirty checkout. -->
     <Compile Remove="TranspilerFixtures\**\*.cs" />
     <Compile Include="..\Source\Spine\Core\Caching\BoundedLruCache.cs"
              Link="Foundation\BoundedLruCache.cs" />

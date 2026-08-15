@@ -10,9 +10,10 @@ are deliberately limited to facilities used by the mod suite:
 - a bounded cache used by Filter Signals, Faction Lens, and BWT's embedded
   renderer.
 
-The fluent transpiler recipes, stack validation, and emitted-IL diagnostics are
-an optional companion assembly. They do not inflate or initialize the core
-runtime used by the eight gameplay mods.
+The former fluent-transpiler recipes, stack validation, and emitted-IL
+diagnostics are retired from Spine. BWT's exact-profile engine is a BWT-owned
+implementation and is not a Spine API or dependency. Spine's core runtime does
+not ship or initialize a legacy transpiler companion.
 
 BWT's work-grid snapshots, invalidation, rendering pipeline, profiling,
 serialization isolation, animation, layout, and settings import/export remain
@@ -21,9 +22,9 @@ them standalone Spine APIs.
 
 Better Work Tab retains its self-contained embedded build and can also compile
 an external-Spine candidate. Its allowlisted shared mirror is checked against
-standalone Spine on every build. External mode references core Spine and the
-optional transpiler companion because BWT is the only current fluent
-transpiler consumer. Gameplay consumers reference only `Spine.dll`, declare
+standalone Spine on every build. External mode references core Spine only;
+BWT's exact-profile transpilers remain inside BWT and are not supplied by
+Spine. Gameplay consumers reference only `Spine.dll`, declare
 `CoolNether123.Spine` in `About.xml`, and never bundle the DLL themselves.
 
 ## Public API shape

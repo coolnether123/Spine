@@ -77,8 +77,10 @@ namespace Spine.Tests
                 "settings capability id is stable");
             Equal(1UL << 9, (ulong)SpineCapability.HarmonyPatching,
                 "Harmony capability id is stable");
-            Equal(1UL << 10, (ulong)SpineCapability.FluentTranspilers,
-                "fluent-transpiler capability id is stable");
+            const SpineCapability retiredFluentTranspilers =
+                (SpineCapability)(1UL << 10);
+            Equal(1UL << 10, (ulong)retiredFluentTranspilers,
+                "retired fluent-transpiler capability id remains reserved");
             Equal(1UL << 11, (ulong)SpineCapability.TooltipSizing,
                 "tooltip capability id is stable");
             Equal(1UL << 12, (ulong)SpineCapability.ContextualSettings,
@@ -93,12 +95,11 @@ namespace Spine.Tests
             var descriptor = new SpineApiDescriptor(
                 "spine",
                 release,
-                SpineCapability.BoundedCaches |
-                SpineCapability.FluentTranspilers);
+                SpineCapability.BoundedCaches);
             Require(
                 descriptor.Supports(
                     new SemanticVersion(1, 2, 0),
-                    SpineCapability.BoundedCaches | SpineCapability.FluentTranspilers),
+                    SpineCapability.BoundedCaches),
                 "supported handshake");
             Require(
                 !descriptor.Supports(next, SpineCapability.BoundedCaches),
@@ -129,6 +130,10 @@ namespace Spine.Tests
                 new SemanticVersion(1, 1, 0),
                 runtime.Descriptor.Version,
                 "settings-page capability runtime version");
+            Require(
+                (runtime.Descriptor.Capabilities & retiredFluentTranspilers) ==
+                SpineCapability.None,
+                "runtime descriptor does not advertise the retired fluent-transpiler capability");
             var descriptorField = typeof(SpineRuntimeFacade).GetField(
                 "CurrentDescriptor",
                 System.Reflection.BindingFlags.NonPublic |

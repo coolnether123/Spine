@@ -1,5 +1,9 @@
 # On Rewriting a Method You Did Not Write
 
+> Historical research note: this essay describes the retired Fluent transpiler
+> subsystem. It is retained as design history, not as a current Spine API or
+> supported implementation guide.
+
 There is a particular kind of problem in modding that has no clean solution, only degrees of care. You want to change what a method does, but you did not write the method, you cannot recompile it, and the person who did write it has no idea you exist. Harmony solves most of this elegantly. You can run code before a method, or after it, and for the overwhelming majority of what anyone wants to do, that is enough. You want to know when a pawn finishes a job, you postfix the method that finishes jobs. You want to stop something from happening, you prefix it and return false. Clean, readable, survivable.
 
 And then occasionally you hit the case where it is not enough. The thing you want to change is not the method's beginning or its end. It is a single call sitting in the middle of a loop, forty instructions deep, and the value it returns feeds a comparison you need to influence. You cannot wrap the outside of the method to reach the inside of it. What you actually need is to open the method up and change one instruction in the middle, and that is where transpilers come in, and that is where the ground stops being solid.

@@ -63,7 +63,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Spine\harmony\HarmonyCompat.cs" />
-    <Compile Remove="Spine\harmony\Transpilers\**\*.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == '0.16' Or '$(Configuration)' == '0.15' Or '$(Configuration)' == '0.14' Or '$(Configuration)' == '0.13' Or '$(Configuration)' == 'Alpha4'">
     <Compile Remove="**\*.cs" />

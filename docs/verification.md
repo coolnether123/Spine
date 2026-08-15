@@ -1,5 +1,26 @@
 # Spine 1.6 verification
 
+## Current state — legacy Fluent removal (2026-08-15)
+
+The legacy `Spine.Transpilers` companion is no longer part of Spine. Its 20
+companion source files, standalone project, legacy bootstrap, emitted-IL
+fixture project, and tracked payload DLLs were removed after the production
+consumer audit found no active Spine assembly dependency. Better Work Tab's
+six migrated transpilers remain in its private
+`Source/Transpilers/BwtExactProfile` engine; Construction Performance
+Optimizer retains its separately copied local implementation.
+
+Capability bit 10 remains reserved at its established wire value but is not
+advertised by the runtime descriptor. The dated checkpoints below retain their
+historical evidence, including references to the companion and fixture suite
+as they existed at those checkpoints; they are not current packaging or API
+requirements.
+
+> Historical/superseded record: every dated checkpoint below describes the
+> source tree and artifacts at that checkpoint. References to the retired
+> Fluent API, companion assembly, or fixture project are historical evidence,
+> not current Spine interfaces, package contents, or support requirements.
+
 ## 1.0 development checkpoint — 2026-08-01
 
 The 1.0 development line added the compact, feature-neutral
@@ -106,18 +127,19 @@ ended with no runtime errors. The final Spine 1.0 DLL SHA-256 is
 RimWorld still emits dependency-link warnings because Spine has no public
 Workshop or repository download URL yet; no fake URL was added.
 
-## 1.0 BWT boundary cleanup — 2026-08-02
+## Historical checkpoint (superseded) — 1.0 BWT boundary cleanup — 2026-08-02
 
-Standalone Spine now contains only suite-proven shared facilities: capability
-negotiation, definition-driven settings and contextual navigation,
-owner-preserving Harmony installation, opt-in tooltip sizing, bounded caching,
-and the fluent transpiler system. BWT-owned snapshots, dirty-region tracking,
-render pipelines, profiling, serialization isolation, animation/layout,
-settings import/export, and their single-purpose helpers were removed. Better
-Work Tab itself was not edited.
+At this historical checkpoint, standalone Spine contained only suite-proven
+shared facilities: capability negotiation, definition-driven settings and
+contextual navigation, owner-preserving Harmony installation, opt-in tooltip
+sizing, bounded caching, and the fluent transpiler system. BWT-owned snapshots,
+dirty-region tracking, render pipelines, profiling, serialization isolation,
+animation/layout, settings import/export, and their single-purpose helpers were
+removed. Better Work Tab itself was not edited.
 
-The fluent transpiler remains, but its public guidance now starts from one
-`FluentTranspiler.Execute` entry point and a short set of guarded recipes.
+At that checkpoint, the fluent transpiler remained, and its public guidance
+started from one `FluentTranspiler.Execute` entry point and a short set of
+guarded recipes.
 Cartography, stack analysis, diff/debug support, compatibility matching, and
 safety policy are implementation details. Domain packs, cooperative patching,
 Unity patterns, and the shipped test harness were removed; emitted-IL fixtures
@@ -148,16 +170,17 @@ The resulting `Spine.dll` is 267,264 bytes with SHA-256
 down from 334,336 bytes at the preceding suite-facade checkpoint. The
 dependency manifest pins the new hash.
 
-## 1.0 efficiency and optional-transpiler consolidation — 2026-08-02
+## Historical checkpoint (superseded) — 1.0 efficiency and optional-transpiler consolidation — 2026-08-02
 
-The final review moved the fluent transpiler implementation out of the core
-runtime because Better Work Tab is its only real consumer. Core `Spine.dll`
-now contains only facilities exercised by multiple gameplay mods: capability
-negotiation, definition-driven settings and contextual navigation,
-owner-preserving Harmony installation, opt-in tooltip sizing, bounded caches,
-and failure-isolated runtime facades. The optional
-`Spine.Transpilers.dll` companion retains the fluent API and its emitted-IL
-fixtures without making eight unrelated gameplay mods load that code.
+At this historical checkpoint, the final review moved the fluent transpiler
+implementation out of the core runtime because Better Work Tab was its only
+real consumer. Core `Spine.dll` then contained only facilities exercised by
+multiple gameplay mods: capability negotiation, definition-driven settings and
+contextual navigation, owner-preserving Harmony installation, opt-in tooltip
+sizing, bounded caches, and failure-isolated runtime facades. The optional
+`Spine.Transpilers.dll` companion retained the fluent API and its emitted-IL
+fixtures without making eight unrelated gameplay mods load that code. This
+companion was later retired and is not a current package or support boundary.
 
 The same pass centralized settings defaults, ordering, and page preparation;
 Harmony installation; shared test references; and debug-fixture placement.
@@ -199,11 +222,11 @@ the removed files are recoverable from
 the local RimWorld archive folder named
 `Better-Work-Tab-root-assemblies-20260802`.
 
-Final shipping hashes are:
+Historical checkpoint hashes (superseded; not current shipping artifacts) were:
 
 - core `Spine.dll`: 109,056 bytes, SHA-256
   `3E857A09793BBFF839D0C18D197E480C9365B6384148F49F48669F068BBB9086`;
-- optional developer `Spine.Transpilers.dll`: 171,520 bytes, SHA-256
+- historical optional developer `Spine.Transpilers.dll`: 171,520 bytes, SHA-256
   `59DF6A4036CDEB9B2FEF9B5339BAF6F49CD0170FB8EAB208893EDF10F1A661F3`.
 
 ## 1.0 second-review hardening
@@ -222,10 +245,10 @@ tooling-owned `RimWorld.ModTestSupport` runner instead of retaining another
 copy. The pure suite passes 12 contracts and 95 assertions, the emitted-IL
 fixtures pass, and all eight consumer-facade checks pass.
 
-Better Work Tab retains the fluent transpiler source inside both of its own
-assembly variants. It does not ship or reference the optional standalone
-transpiler DLL; that developer companion remains outside BWT's payload and is
-not part of BWT's standalone-Spine requirement.
+The current Better Work Tab migration keeps its exact-profile transpiler source
+inside both of its own assembly variants. It does not ship or reference the
+retired standalone transpiler DLL, and that companion is no longer part of
+Spine's developer or standalone payload.
 
 RimWorld continues to report dependency-link warnings because unreleased Spine
 does not yet have a truthful public download URL. The combined SOS2 stack also
