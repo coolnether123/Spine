@@ -1,36 +1,33 @@
 # SpineLib
 
-SpineLib is the public name of the feature-neutral runtime shared by CoolNether123
-RimWorld mods. Its package ID, assemblies, namespaces, and API identifiers remain
-`Spine` for compatibility with existing consumers.
-It provides settings pages, contextual settings navigation, guarded Harmony
-installation, opt-in tooltip stabilization, and bounded caching. SpineLib does not add
-player-facing gameplay by itself.
+SpineLib is the shared runtime used by CoolNether123 RimWorld mods. Its package
+ID, assemblies, namespaces, and API identifiers remain `Spine` so existing
+mods keep working. It provides settings pages, Alt-click navigation, guarded
+Harmony installation, optional tooltip stabilization, and bounded caching.
+SpineLib adds no gameplay by itself.
 
 ## Alt-click to settings
 
-Every setting a SpineLib mod exposes is reachable from the thing it affects.
-Alt-click a mod's button, command or label and SpineLib opens that mod's settings
-page with the matching option highlighted, rather than leaving you to hunt
-through a list for it.
+Alt-click a supported button, command, or label and SpineLib opens that mod's
+settings page with the matching option highlighted.
 
-This is a guarantee, not a feature that comes and goes: every CoolNether123 mod
-built on SpineLib supports it, and new ones are expected to. The dev-mode settings
-audit exists partly to keep that true.
+CoolNether123 mods built on SpineLib support this wherever they expose a
+setting tied to visible UI. A development-mode audit checks those bindings.
 
-Any other modder can have the same behaviour. Bind a visible rectangle to a
-setting id through the `ContextualSettings` capability and SpineLib owns the rest -
-Alt-left-click detection, overlap arbitration between competing rectangles,
-event consumption, opening the window, scrolling to the row and highlighting
-it. The input hook only exists while a consumer holds a lease, so a mod that
-never asks for it pays nothing.
+Other modders can use the same behavior. Bind a visible rectangle to a setting
+ID through the `ContextualSettings` capability. SpineLib then handles the
+Alt-click, resolves overlapping rectangles, consumes the event, opens the
+window, scrolls to the row, and highlights it. The input hook exists only
+while a mod holds a lease.
+
 ## Install
+
 Install Harmony first, then copy the `Spine` folder into RimWorld's `Mods`
 directory and load SpineLib before any mod that declares `CoolNether123.Spine` as
 a dependency. The folder and dependency ID intentionally remain `Spine`.
 
-Never copy `Spine.dll` into a consumer mod. Two copies of the same types loaded
-at once is precisely the situation a shared runtime exists to prevent.
+Never copy `Spine.dll` into a consumer mod. Loading two copies creates duplicate
+types and defeats the purpose of a shared runtime.
 
 SpineLib is available on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3778463813). Each
 consumer mod stays independently selectable and depends on no other gameplay
@@ -46,7 +43,6 @@ mod.
 - Prefer exact utility operations with stable meaning. Do not request a public
   API for a single mod action, screen, or special case; keep that code in the
   consumer.
-- Depend only on the facilities the consumer actually uses.
 - Keep gameplay, compatibility adapters, and mod-specific settings definitions
   in the consumer repository.
 - Treat Better Work Tab as read-only provenance. New shared changes belong in
@@ -68,9 +64,8 @@ incremented development version numbers.
 
 For the common case, derive the mod entry point from `SpineMod<TSettings>`.
 One constructor call negotiates the standard settings capabilities, loads the
-persisted settings object, and owns lazy page creation plus contextual
-navigation. Lazy creation keeps translation and UI work out of RimWorld's
-early mod-construction phase:
+saved settings, and creates the page only when needed. This keeps translation
+and UI work out of RimWorld's early mod-construction phase:
 
 ```csharp
 public sealed class ExampleMod : SpineMod<ExampleSettings>
@@ -92,19 +87,19 @@ public sealed class ExampleMod : SpineMod<ExampleSettings>
 }
 ```
 
-`SpineMod<TSettings>` owns standard RimWorld mod-settings plumbing and exposes
-the current settings object plus contextual-settings lease through inherited
-static accessors. Consumers still own their definitions, persistence fields,
-gameplay startup, and Harmony owner ID. `SettingsSchema<TSettings>` is the
-single settings-definition API; omitted defaults come from a fresh settings
-instance and omitted sort orders follow definition order. The schema
+`SpineMod<TSettings>` handles the standard RimWorld settings setup. Inherited
+static accessors expose the current settings object and contextual-settings
+lease. Consumers still own their definitions, persistence fields, gameplay
+startup, and Harmony owner ID. `SettingsSchema<TSettings>` is the settings
+definition API. Defaults come from a fresh settings instance, and rows without
+an explicit sort order follow definition order. The schema
 (Spine API 1.1.0, `SpineCapability.SettingsSchema`) owns ordered
 definitions and scopes them under optional headers. Mods without a settings page use
 `SpineApi.Runtime` and the individual facades directly.
 
 The lower-level `ModSettingsPages` facade remains available for unusual hosts.
-It owns the localized drawer, adaptive page chrome, contextual settings lease,
-and draw lifecycle without owning any setting's gameplay meaning.
+It handles the localized drawer, page controls, contextual-settings lease, and
+draw lifecycle. The consumer still owns what each setting means.
 
 SpineLib also advertises the versioned `ContextualSettings` capability. Consumers
 bind a visible rectangle to an exact setting, settings group, or mod root.
@@ -175,14 +170,13 @@ schema.Root.Button(
     .Localized("Example_Settings_Reset", "Example_Settings_Reset_Tip");
 ```
 
-That is the whole API for the common case. The rest of this section is for the
-settings that need shaping beyond a label and a field.
+That covers the common case. The rest of this section is for settings that
+need more than a label and a field.
 
 #### Refinements
 
-Anything specific to one widget is a **refinement**: a chained method that says
-its own name. A slider, for instance, needs bounds, and bounds passed as bare
-arguments would be two anonymous floats:
+A refinement is a chained method that configures one widget. For example, a
+slider needs named bounds instead of two unexplained numbers:
 
 ```csharp
 schema.Root.Slider(
@@ -194,9 +188,8 @@ schema.Root.Slider(
     .ShowsPercent()
 ```
 
-Written positionally, a reader meeting `0.35f, 1f` mid-call learns nothing
-about which is the minimum, what units it is in, or whether a third number is
-coming. Refinements cost one line each and remove the guessing.
+Written positionally, `0.35f, 1f` does not tell the reader which value is the
+minimum or what the values mean. Named refinements make that clear.
 
 Available refinements, all in `SettingRefinements`, all chainable in any order:
 

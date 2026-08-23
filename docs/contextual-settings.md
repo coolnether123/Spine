@@ -20,7 +20,7 @@ lease.BindSetting(rect, "display.format", "display.header", 0, featureTooltip);
 lease.BindSettingsGroup(rect, "display.header", 0, featureTooltip);
 ```
 
-These helpers safely ignore a null lease, blank target ID, or non-positive rectangle.
+These helpers ignore a null lease, blank target ID, or non-positive rectangle.
 An empty feature tooltip selects `HintOnly`; non-empty text selects
 `WithTooltip`. Both methods delegate to the unchanged `Bind` contract.
 
@@ -40,7 +40,7 @@ hovering, and keyboard events are ignored.
 
 `ContextualSettingsBindingOptions` can omit tooltip work or let Spine register
 an existing feature tooltip once. Spine does not append or register an
-“Alt-click” hint over gameplay UI. The convention is documented in mod
+"Alt-click" hint over gameplay UI. The convention is documented in mod
 documentation instead of repeated across world labels, overlays, and
 controls. The older hint fields remain binary-compatible but are presentation
 no-ops in the current 1.1 capability. Existing consumers may continue
