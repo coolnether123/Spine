@@ -71,6 +71,14 @@ namespace Spine.Tests
             SemanticVersion next = SemanticVersion.Parse("1.3.0");
             Require(preview < release, "prerelease precedes release");
             Require(release < next, "minor comparison");
+            SemanticVersion largePreview = SemanticVersion.Parse("1.2.3-9999999999999999999");
+            SemanticVersion laterPreview = SemanticVersion.Parse("1.2.3-10000000000000000000");
+            Require(largePreview < laterPreview, "numeric prerelease comparison does not overflow");
+            Require(laterPreview > largePreview, "large prerelease ordering is symmetric");
+            Require(laterPreview < preview, "large numeric prerelease precedes text identifiers");
+            Require(!new SpineApiDescriptor("example", largePreview, SpineCapability.BoundedCaches)
+                .Supports(laterPreview, SpineCapability.BoundedCaches),
+                "capability negotiation rejects a newer numeric prerelease requirement");
             Equal(1UL << 2, (ulong)SpineCapability.BoundedCaches,
                 "bounded-cache capability id is stable");
             Equal(1UL << 8, (ulong)SpineCapability.Settings,
