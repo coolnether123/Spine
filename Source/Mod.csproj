@@ -1,16 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RwtIsRimWorldMod>true</RwtIsRimWorldMod>
-    <TargetFramework>net472</TargetFramework>
+    <RwtUseWaylith Condition="'$(Configuration)' == '1.7'">true</RwtUseWaylith>
+    <TargetFramework Condition="'$(Configuration)' != '1.7'">net472</TargetFramework>
+    <TargetFramework Condition="'$(Configuration)' == '1.7'">net10.0</TargetFramework>
+    <DisableImplicitConfigurationDefines>true</DisableImplicitConfigurationDefines>
     <AssemblyName>Spine</AssemblyName>
     <RootNamespace>Spine</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <OutputPath>..\1.6\Assemblies\</OutputPath>
+    <OutputPath Condition="'$(Configuration)' == '1.7'">..\1.7\Assemblies\</OutputPath>
     <RwtUseHarmony>true</RwtUseHarmony>
     <RwtUseUnityImGui>true</RwtUseUnityImGui>
     <RwtUseUnityInputLegacy>true</RwtUseUnityInputLegacy>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == '1.6' Or '$(Configuration)' == '1.5'">
+  <PropertyGroup Condition="'$(Configuration)' == '1.7' Or '$(Configuration)' == '1.6' Or '$(Configuration)' == '1.5'">
     <DefineConstants>TRACE;RWT_HAS_DIALOG_MOD_SETTINGS_MOD_CTOR;RWT_HAS_COLOR_PICKER_ACCEPT_CANCEL;RWT_HAS_COLOR_PICKER_CLICK_OUTSIDE;RWT_HAS_COLOR_PICKER_WINDOW_LAYOUT;RWT_HAS_WARNING_ONCE;RWT_DRAW_LINE_COLOR;RWT_FLOATMENU_DOGUI_CONTEXT;RWT_BUTTON_TEXT_OVERRIDE_TEXT_ANCHOR</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == '1.4'">

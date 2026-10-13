@@ -11,3 +11,6 @@ Engineering/artifacts/
 # Local developer scaffolding. Never part of the release payload, and its built
 # assemblies go stale the moment the shipping mod moves on.
 Developer/
+
+# The 1.7 port stages tested runtime payloads outside source.
+/1.7/Assemblies/

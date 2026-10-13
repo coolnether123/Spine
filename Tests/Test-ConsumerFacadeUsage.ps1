@@ -1,6 +1,10 @@
+param([string]$ModsRoot)
+
 $ErrorActionPreference = 'Stop'
 
-$modsRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+if ([string]::IsNullOrWhiteSpace($ModsRoot)) {
+    $ModsRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+}
 $consumers = @(
     'FilterSignals',
     'PrisonerInteractionTimer',
@@ -23,7 +27,7 @@ $conditionalLegacyPatchConsumers = @('TaskBreak')
 
 function SourceText([string]$consumer)
 {
-    $source = Join-Path (Join-Path $modsRoot $consumer) 'Source'
+    $source = Join-Path (Join-Path $ModsRoot $consumer) 'Source'
     if (-not (Test-Path -LiteralPath $source))
     {
         throw "Missing consumer source: $source"
